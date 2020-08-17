@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.github.cm-heclouds</groupId>
+    <artifactId>protocol-adapter</artifactId>
+    <packaging>pom</packaging>
+    <version>1.0.0-RELEASE</version>
+    <modules>
+        <module>protocol-adapter-core</module>
+        <module>protocol-adapter-sdk</module>
+        <module>protocol-adapter-protocolhub/protocol-adapter-protocolhub-tcp</module>
+        <module>thing-model-code-generator</module>
+    </modules>
+    <description>泛协议接入服务SDK</description>
+
+</project>

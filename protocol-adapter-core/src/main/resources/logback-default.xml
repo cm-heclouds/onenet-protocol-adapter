@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration debug="false">
+    <!--定义日志文件的存储地址 勿在 LogBack 的配置中使用相对路径-->
+    <property name="SERVICE_NAME" value="protocol-adapter"/>
+    <property name="LOG_HOME" value="./logs/${SERVICE_NAME}"/>
+    <property name="FILE_LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %5p [%15.15t] [%-20.20logger{40}] %m%n%ex"/>
+    <property name="CONSOLE_LOG_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} %5p [%15.15t] [%-20.20logger{40}] %m%n%ex"/>
+    <!-- 控制台输出 -->
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+    <!-- 按照每天生成日志文件 -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!--<file>${LOG_HOME}/${SERVICE_NAME}_{yyyy-MM-dd}.log</file>-->
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>DEBUG</level>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!-- rollover daily 配置日志所生成的目录以及生成文件名的规则 -->
+            <fileNamePattern>${LOG_HOME}/${SERVICE_NAME}_%d{yyyyMMdd}.%i.log</fileNamePattern>
+            <maxFileSize>200 MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>3GB</totalSizeCap>
+        </rollingPolicy>
+
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <!--格式化输出：%d表示日期，%thread表示线程名，%-5level：级别从左显示5个字符宽度%msg：日志消息，%n是换行符-->
+            <pattern>${FILE_LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+    <appender name="FILE_ERROR" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!--<file>${LOG_HOME}/${SERVICE_NAME}_error_{yyyy-MM-dd}.log</file>-->
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ERROR</level>
+        </filter>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!-- rollover daily 配置日志所生成的目录以及生成文件名的规则 -->
+            <fileNamePattern>${LOG_HOME}/${SERVICE_NAME}_error_%d{yyyyMMdd}.%i.log</fileNamePattern>
+            <maxFileSize>200 MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>3GB</totalSizeCap>
+        </rollingPolicy>
+
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>${FILE_LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 日志输出级别 -->
+    <root level="INFO">
+        <appender-ref ref="FILE"/>
+        <appender-ref ref="FILE_ERROR"/>
+        <appender-ref ref="STDOUT"/>
+    </root>
+
+    <!--日志异步到文件 -->
+    <logger name="com.cmiot.adapter" level="INFO" additivity="false">
+        <appender-ref ref="FILE"/>
+        <appender-ref ref="FILE_ERROR"/>
+        <appender-ref ref="STDOUT"/>
+    </logger>
+</configuration>
