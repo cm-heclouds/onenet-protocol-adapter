@@ -23,7 +23,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 public class ProcessorUtil {
 
-    public static final String API_EXTENSION_PACKAGE = "com.github.cm.heclouds.api";
+    public static final String API_EXTENSION_PACKAGE = "com.github.cm.heclouds.adapter.api";
 
     public static final Gson GSON = new Gson();
 
