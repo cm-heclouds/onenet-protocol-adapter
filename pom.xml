@@ -7,12 +7,87 @@
     <artifactId>protocol-adapter</artifactId>
     <packaging>pom</packaging>
     <version>1.0.0-RELEASE</version>
+    <name>protocol-adapter</name>
+    <description>OneNET Studio泛协议接入SDK</description>
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
     <modules>
         <module>protocol-adapter-core</module>
         <module>protocol-adapter-sdk</module>
         <module>protocol-adapter-protocolhub/protocol-adapter-protocolhub-tcp</module>
         <module>thing-model-code-generator</module>
     </modules>
-    <description>泛协议接入服务SDK</description>
+
+    <developers>
+        <developer>
+            <name>accessjavagroup</name>
+            <email>zuojian@cmiot.chinamobile.com</email>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git@github.com:cm-heclouds/onenet-protocol-adapter.git</connection>
+        <developerConnection>scm:git:git@github.com:cm-heclouds/onenet-protocol-adapter.git</developerConnection>
+        <url>https://github.com/cm-heclouds/onenet-protocol-adapter.git</url>
+    </scm>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.2.0</version>
+                <configuration>
+                    <attach>true</attach>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.0</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
+            <!-- GPG -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>1.6</version>
+                <executions>
+                    <execution>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>oss</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+        </snapshotRepository>
+        <repository>
+            <id>oss</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
 
 </project>
