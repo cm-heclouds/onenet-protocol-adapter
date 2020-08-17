@@ -7,6 +7,8 @@
     <groupId>com.github.cm-heclouds</groupId>
     <artifactId>thing-model-code-generator</artifactId>
     <version>1.0.0</version>
+    <name>thing-model-code-generator</name>
+    <description>OneNET Studio泛协议接入物模型代码生成器</description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
