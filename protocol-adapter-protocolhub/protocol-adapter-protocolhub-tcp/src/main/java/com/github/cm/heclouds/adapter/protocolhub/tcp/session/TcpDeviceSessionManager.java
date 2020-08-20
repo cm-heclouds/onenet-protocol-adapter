@@ -1,6 +1,8 @@
 package com.github.cm.heclouds.adapter.protocolhub.tcp.session;
 
+import com.github.cm.heclouds.adapter.core.entity.Device;
 import com.github.cm.heclouds.adapter.core.logging.ILogger;
+import com.github.cm.heclouds.adapter.core.utils.DeviceUtils;
 import com.github.cm.heclouds.adapter.protocolhub.tcp.config.TcpProtocolHubConfigUtils;
 import io.netty.channel.Channel;
 
@@ -67,8 +69,9 @@ public final class TcpDeviceSessionManager {
      */
     public static void handleConnectionLost(TcpDeviceSession deviceSession) {
         if (deviceSession != null) {
-            Channel channel = deviceSession.getChannel();
-            String reason = TcpDeviceSessionNettyUtils.deviceCloseReason(channel);
+            Device device = Device.newBuilder().productId(deviceSession.getProductId()).deviceName(deviceSession.getDeviceName()).build();
+            String reason = DeviceUtils.getDeviceCloseReason(device).getValue();
+            DeviceUtils.removeDeviceCloseReason(device);
             // 移除DevSessionManager中的DeviceSession
             TcpDeviceSessionManager.removeDeviceSession(deviceSession);
             LOGGER.logDevInfo(TcpProtocolHubConfigUtils.getName(), DISCONNECT, deviceSession.getProductId(), deviceSession.getDeviceName(), reason);

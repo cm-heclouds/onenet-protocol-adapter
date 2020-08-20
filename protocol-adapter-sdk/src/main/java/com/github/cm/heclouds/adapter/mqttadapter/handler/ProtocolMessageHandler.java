@@ -2,6 +2,12 @@ package com.github.cm.heclouds.adapter.mqttadapter.handler;
 
 import com.github.cm.heclouds.adapter.api.ConfigUtils;
 import com.github.cm.heclouds.adapter.config.Config;
+import com.github.cm.heclouds.adapter.core.consts.CloseReason;
+import com.github.cm.heclouds.adapter.core.entity.Device;
+import com.github.cm.heclouds.adapter.core.entity.OneJSONRequest;
+import com.github.cm.heclouds.adapter.core.entity.Response;
+import com.github.cm.heclouds.adapter.core.logging.ILogger;
+import com.github.cm.heclouds.adapter.core.utils.DeviceUtils;
 import com.github.cm.heclouds.adapter.custom.DeviceDownLinkHandler;
 import com.github.cm.heclouds.adapter.entity.ConnectionType;
 import com.github.cm.heclouds.adapter.entity.DeviceSession;
@@ -16,10 +22,6 @@ import com.github.cm.heclouds.adapter.mqttadapter.codec.ProtocolMessageUtil;
 import com.github.cm.heclouds.adapter.mqttadapter.codec.TopicUtils;
 import com.github.cm.heclouds.adapter.mqttadapter.mqtt.MqttSubscription;
 import com.github.cm.heclouds.adapter.utils.ConnectSessionNettyUtils;
-import com.github.cm.heclouds.adapter.core.entity.Device;
-import com.github.cm.heclouds.adapter.core.entity.OneJSONRequest;
-import com.github.cm.heclouds.adapter.core.entity.Response;
-import com.github.cm.heclouds.adapter.core.logging.ILogger;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -158,13 +160,13 @@ public final class ProtocolMessageHandler extends SimpleChannelInboundHandler<Mq
                 } else {
                     if (!ProxySessionManager.isProxiedDevicesReachedLimit(deviceSession, response)) {
                         deviceSession.getProxySession().setDevicesReachedLimit(false);
-                        deviceSession.setCloseReason(response.getMsg().toString());
+                        DeviceUtils.setDeviceCloseReason(device, CloseReason.CLOSE_BY_ONENET);
                         deviceDownLinkHandler.onDeviceLoginResponse(device, response);
                     }
                 }
                 break;
             case LOGOUT_RESPONSE: {
-                deviceSession.setCloseReason("close by device activity");
+                DeviceUtils.setDeviceCloseReason(device, CloseReason.CLOSE_BY_DEVICE_OFFLINE);
                 DeviceSessionManager.handleDeviceOffline(deviceSession);
                 deviceDownLinkHandler.onDeviceLogoutResponse(device, Response.decode(data));
                 break;
@@ -175,12 +177,7 @@ public final class ProtocolMessageHandler extends SimpleChannelInboundHandler<Mq
                     return;
                 }
                 Response decode = Response.decode(data);
-                String closeReason = null;
-                try {
-                    closeReason = String.valueOf(decode.getMsg());
-                } catch (Exception e) {
-                }
-                deviceSession.setCloseReason(closeReason);
+                DeviceUtils.setDeviceCloseReason(device, CloseReason.CLOSE_BY_ONENET);
                 DeviceSessionManager.handleDeviceOffline(deviceSession);
                 deviceDownLinkHandler.onDeviceNotifiedLogout(device, decode);
                 break;

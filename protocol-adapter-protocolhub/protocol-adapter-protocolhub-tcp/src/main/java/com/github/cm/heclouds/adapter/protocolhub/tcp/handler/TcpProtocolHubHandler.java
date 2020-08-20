@@ -1,8 +1,10 @@
 package com.github.cm.heclouds.adapter.protocolhub.tcp.handler;
 
+import com.github.cm.heclouds.adapter.core.consts.CloseReason;
 import com.github.cm.heclouds.adapter.core.entity.Device;
 import com.github.cm.heclouds.adapter.core.logging.ILogger;
 import com.github.cm.heclouds.adapter.core.logging.LoggerFormat;
+import com.github.cm.heclouds.adapter.core.utils.DeviceUtils;
 import com.github.cm.heclouds.adapter.protocolhub.tcp.config.TcpProtocolHubConfig;
 import com.github.cm.heclouds.adapter.protocolhub.tcp.config.TcpProtocolHubConfigUtils;
 import com.github.cm.heclouds.adapter.protocolhub.tcp.custom.TcpDeviceUpLinkHandler;
@@ -54,6 +56,8 @@ public final class TcpProtocolHubHandler extends ChannelDuplexHandler {
                 TcpDeviceSessionManager.putDeviceSession(deviceSession);
             }
         } else {
+            // 移除设备连接关闭原因，防止调用OpenApi主动登出设备后设备连接关闭原因一直被认为是主动登出
+            DeviceUtils.removeDeviceCloseReason(device);
             // 解码
             tcpDeviceUpLinkHandler.processUpLinkData(device, msg, channel);
         }
@@ -64,19 +68,26 @@ public final class TcpProtocolHubHandler extends ChannelDuplexHandler {
     public void channelInactive(ChannelHandlerContext ctx) {
         Channel channel = ctx.channel();
         TcpDeviceSession devSession = TcpDeviceSessionNettyUtils.deviceSession(channel);
-        if (devSession == null) {
+        Device device = TcpDeviceSessionNettyUtils.device(channel);
+        if (devSession == null || device == null) {
             return;
         }
-        tcpDeviceUpLinkHandler.processConnectionLost(TcpDeviceSessionNettyUtils.device(channel), channel);
+        if (DeviceUtils.getDeviceCloseReason(device) != CloseReason.CLOSE_BY_DEVICE_OFFLINE) {
+            tcpDeviceUpLinkHandler.processConnectionLost(device, channel);
+        }
         TcpDeviceSessionManager.handleConnectionLost(devSession);
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        logger.logInnerError(TcpProtocolHubConfigUtils.getName(), RUNTIME, "exceptionCaught", cause);
+        Device device = TcpDeviceSessionNettyUtils.device(ctx.channel());
+        String pid = device == null ? null : device.getProductId();
+        String deviceName = device == null ? null : device.getDeviceName();
+        logger.logInnerWarn(TcpProtocolHubConfigUtils.getName(), RUNTIME, pid, deviceName, "exceptionCaught: " + cause);
         if (!(cause instanceof IOException)) {
-            String reason = cause.getLocalizedMessage();
-            TcpDeviceSessionNettyUtils.setDeviceCloseReason(ctx.channel(), reason);
+            if (device != null) {
+                DeviceUtils.setDeviceCloseReason(device, CloseReason.CLOSE_DUE_TO_UNKNOWN_EXCEPTION);
+            }
         }
         if (ctx.channel().isActive()) {
             ctx.close();

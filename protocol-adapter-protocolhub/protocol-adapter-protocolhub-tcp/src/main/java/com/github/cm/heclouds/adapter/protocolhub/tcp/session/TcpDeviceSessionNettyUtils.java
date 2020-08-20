@@ -11,13 +11,11 @@ public final class TcpDeviceSessionNettyUtils {
 
     private static final String DEVICE = "device";
     private static final String DEVICE_SESSION = "deviceSession";
-    private static final String DEVICE_CLOSE_REASON = "deviceCloseReason";
     private static final String DEVICE_PROTOCOL_TYPE = "deviceProtocolType";
     private static final String DEVICE_REMOTE_ADDRESS = "deviceRemoteAddress";
 
     private static final AttributeKey<Device> ATTR_KEY_DEVICE = AttributeKey.valueOf(DEVICE);
     private static final AttributeKey<TcpDeviceSession> ATTR_KEY_DEVICE_SESSION = AttributeKey.valueOf(DEVICE_SESSION);
-    private static final AttributeKey<String> ATTR_KEY_CLOSE_REASON = AttributeKey.valueOf(DEVICE_CLOSE_REASON);
     private static final AttributeKey<String> ATTR_KEY_PROTOCOL_TYPE = AttributeKey.valueOf(DEVICE_PROTOCOL_TYPE);
     private static final AttributeKey<String> ATTR_KEY_REMOTE_ADDRESS = AttributeKey.valueOf(DEVICE_REMOTE_ADDRESS);
 
@@ -46,18 +44,6 @@ public final class TcpDeviceSessionNettyUtils {
             tcpDeviceSession = channel.attr(TcpDeviceSessionNettyUtils.ATTR_KEY_DEVICE_SESSION).get();
         }
         return tcpDeviceSession;
-    }
-
-    public static void setDeviceCloseReason(Channel channel, String closeReason) {
-        channel.attr(TcpDeviceSessionNettyUtils.ATTR_KEY_CLOSE_REASON).set(closeReason);
-    }
-
-    public static String deviceCloseReason(Channel channel) {
-        String closeReason = "close by device actively";
-        if (null != channel.attr(TcpDeviceSessionNettyUtils.ATTR_KEY_CLOSE_REASON).get()) {
-            closeReason = channel.attr(TcpDeviceSessionNettyUtils.ATTR_KEY_CLOSE_REASON).get();
-        }
-        return closeReason;
     }
 
     public static void setDeviceRemoteAddress(Channel channel, String remoteAddress) {

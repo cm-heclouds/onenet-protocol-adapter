@@ -18,10 +18,6 @@ public final class DeviceSession {
      * 设备是否已连接到平台接入机
      */
     private volatile boolean login = false;
-    /**
-     * 设备断开连接原因
-     */
-    private String closeReason;
 
     /**
      * 代理此设备的代理连接Session
@@ -69,15 +65,6 @@ public final class DeviceSession {
     public void setProxySession(ProxySession proxySession) {
         this.proxySession = proxySession;
     }
-
-    public String getCloseReason() {
-        return closeReason;
-    }
-
-    public void setCloseReason(String closeReason) {
-        this.closeReason = closeReason;
-    }
-
 
     public static final class Builder {
         private String productId;

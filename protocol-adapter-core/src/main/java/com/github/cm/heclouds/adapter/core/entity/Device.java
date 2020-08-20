@@ -1,5 +1,7 @@
 package com.github.cm.heclouds.adapter.core.entity;
 
+import java.util.Objects;
+
 /**
  * 平台设备实体类，对应平台注册设备
  */
@@ -89,5 +91,23 @@ public final class Device {
                 "productId='" + productId + '\'' +
                 ", deviceName='" + deviceName + '\'' +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Device device = (Device) o;
+        return Objects.equals(productId, device.productId) &&
+                Objects.equals(deviceName, device.deviceName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(productId, deviceName);
     }
 }

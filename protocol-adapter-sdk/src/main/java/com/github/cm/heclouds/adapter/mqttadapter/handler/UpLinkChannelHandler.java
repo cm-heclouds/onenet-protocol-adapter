@@ -2,13 +2,14 @@ package com.github.cm.heclouds.adapter.mqttadapter.handler;
 
 import com.github.cm.heclouds.adapter.api.ConfigUtils;
 import com.github.cm.heclouds.adapter.config.IDeviceConfig;
+import com.github.cm.heclouds.adapter.core.entity.Device;
+import com.github.cm.heclouds.adapter.core.logging.ILogger;
+import com.github.cm.heclouds.adapter.core.utils.DeviceUtils;
 import com.github.cm.heclouds.adapter.entity.DeviceSession;
 import com.github.cm.heclouds.adapter.entity.ProxySession;
 import com.github.cm.heclouds.adapter.mqttadapter.DeviceSessionManager;
 import com.github.cm.heclouds.adapter.mqttadapter.ProxySessionManager;
 import com.github.cm.heclouds.adapter.mqttadapter.codec.ProtocolMessageUtil;
-import com.github.cm.heclouds.adapter.core.entity.Device;
-import com.github.cm.heclouds.adapter.core.logging.ILogger;
 import io.netty.handler.codec.mqtt.MqttMessage;
 
 import static com.github.cm.heclouds.adapter.core.logging.LoggerFormat.Action.*;
@@ -96,6 +97,7 @@ public final class UpLinkChannelHandler {
 
         MqttMessage mqttMessage = ProtocolMessageUtil.createMqttLoginMsg(device, deviceConfig.getOriginalIdentity(productId, deviceName));
         if (mqttMessage != null) {
+            DeviceUtils.removeDeviceCloseReason(device);
             proxySession.getChannel().writeAndFlush(mqttMessage);
         }
     }
@@ -113,7 +115,6 @@ public final class UpLinkChannelHandler {
             logger.logDevWarn(ConfigUtils.getName(), LOGOUT, device.getProductId(), deviceName, "offline request canceled due to device not login");
             return;
         }
-        deviceSession.setLogin(false);
         MqttMessage mqttMessage = ProtocolMessageUtil.createMqttLogoutMsg(device);
         deviceSession.getProxySession().getChannel().writeAndFlush(mqttMessage);
     }

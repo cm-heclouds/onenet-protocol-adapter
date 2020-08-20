@@ -3,16 +3,18 @@ package com.github.cm.heclouds.adapter.mqttadapter;
 import com.github.cm.heclouds.adapter.api.ConfigUtils;
 import com.github.cm.heclouds.adapter.config.IDeviceConfig;
 import com.github.cm.heclouds.adapter.config.impl.ConfigConsts;
-import com.github.cm.heclouds.adapter.entity.ConnectionType;
-import com.github.cm.heclouds.adapter.entity.DeviceSession;
-import com.github.cm.heclouds.adapter.entity.ProxySession;
-import com.github.cm.heclouds.adapter.utils.ConnectSessionNettyUtils;
-import com.github.cm.heclouds.adapter.utils.SasTokenGenerator;
+import com.github.cm.heclouds.adapter.core.consts.CloseReason;
 import com.github.cm.heclouds.adapter.core.entity.Device;
 import com.github.cm.heclouds.adapter.core.entity.Response;
 import com.github.cm.heclouds.adapter.core.logging.ILogger;
+import com.github.cm.heclouds.adapter.core.utils.DeviceUtils;
+import com.github.cm.heclouds.adapter.entity.ConnectionType;
+import com.github.cm.heclouds.adapter.entity.DeviceSession;
+import com.github.cm.heclouds.adapter.entity.ProxySession;
 import com.github.cm.heclouds.adapter.mqttadapter.handler.UpLinkChannelHandler;
 import com.github.cm.heclouds.adapter.mqttadapter.mqtt.promise.MqttConnectResult;
+import com.github.cm.heclouds.adapter.utils.ConnectSessionNettyUtils;
+import com.github.cm.heclouds.adapter.utils.SasTokenGenerator;
 import io.netty.channel.Channel;
 import javafx.util.Pair;
 
@@ -97,13 +99,14 @@ public final class ProxySessionManager {
         while (iterator.hasNext()) {
             Map.Entry<Pair<String, String>, DeviceSession> entry = iterator.next();
             DeviceSession deviceSession = entry.getValue();
-            deviceSession.setCloseReason("proxy connection is disconnected");
+            Device device = Device.newBuilder()
+                    .productId(deviceSession.getProductId())
+                    .deviceName(deviceSession.getDeviceName()).build();
+            DeviceUtils.setDeviceCloseReason(device, CloseReason.CLOSE_DUE_TO_PROXY_CONNECTION_LOST);
             DeviceSessionManager.handleDeviceOffline(deviceSession);
             // 主动通知设备下线
             ConfigUtils.getConfig().getDeviceDownLinkHandler()
-                    .onDeviceNotifiedLogout(Device.newBuilder()
-                            .productId(deviceSession.getProductId())
-                            .deviceName(deviceSession.getDeviceName()).build(), new Response(null, 1061, "disconnected proxy connection"));
+                    .onDeviceNotifiedLogout(device, new Response(null, 1061, "disconnected proxy connection"));
             iterator.remove();
         }
         removeProxySession(proxySession.getProxyId());
