@@ -9,6 +9,7 @@
     <version>1.0.1</version>
     <name>protocol-adapter</name>
     <description>OneNET Studio泛协议接入SDK</description>
+    <url>https://github.com/cm-heclouds/onenet-protocol-adapter</url>
 
     <licenses>
         <license>
@@ -125,7 +126,7 @@
 
     <profiles>
         <profile>
-            <id>ossrh</id>
+            <id>release</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
