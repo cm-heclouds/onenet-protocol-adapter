@@ -6,7 +6,7 @@
     <groupId>com.github.cm-heclouds</groupId>
     <artifactId>protocol-adapter-parent</artifactId>
     <packaging>pom</packaging>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
     <name>protocol-adapter</name>
     <description>OneNET Studio泛协议接入SDK</description>
     <url>https://github.com/cm-heclouds/onenet-protocol-adapter</url>
@@ -40,10 +40,10 @@
         <typesafe.config.version>1.3.5-RC1</typesafe.config.version>
         <auto.service.version>1.0-rc7</auto.service.version>
         <javapoet.version>1.11.1</javapoet.version>
-        <protocol.adapter.core.version>1.0.1</protocol.adapter.core.version>
-        <protocol.adapter.protocolhub.tcp.version>1.0.1</protocol.adapter.protocolhub.tcp.version>
-        <protocol.adapter.sdk.version>1.0.1</protocol.adapter.sdk.version>
-        <thing.model.code.generator.version>1.0.1</thing.model.code.generator.version>
+        <protocol.adapter.core.version>1.0.2</protocol.adapter.core.version>
+        <protocol.adapter.protocolhub.tcp.version>1.0.2</protocol.adapter.protocolhub.tcp.version>
+        <protocol.adapter.sdk.version>1.0.2</protocol.adapter.sdk.version>
+        <thing.model.code.generator.version>1.0.2</thing.model.code.generator.version>
     </properties>
 
     <dependencyManagement>

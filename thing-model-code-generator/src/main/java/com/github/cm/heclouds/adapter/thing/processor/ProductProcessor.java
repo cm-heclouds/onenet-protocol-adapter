@@ -29,7 +29,7 @@ class ProductProcessor {
             configPath = ProductProcessor.class.getClassLoader().getResource(configPath).getPath();
         } catch (Exception e) {
             System.out.println("load thing model file failed, file not exist");
-            return;
+            System.exit(0);
         }
         // 转换配置文件
         String config = ProcessorUtil.readFileToString(configPath);
@@ -38,7 +38,7 @@ class ProductProcessor {
             schema = ProcessorUtil.GSON.fromJson(config, Schema.class);
         } catch (Exception e) {
             System.out.println("load thing model file failed, illegal model file");
-            System.exit(1);
+            System.exit(0);
         }
 
         if (schema == null) {

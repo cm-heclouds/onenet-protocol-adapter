@@ -317,6 +317,7 @@ public class ProcessorUtil {
             }
         } catch (IOException e) {
             System.out.println("load thing model config file failed, file not exist");
+            System.exit(0);
         } finally {
             if (br != null) {
                 try {
