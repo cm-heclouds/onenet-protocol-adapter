@@ -202,7 +202,6 @@ public final class ProtocolMessageHandler extends SimpleChannelInboundHandler<Mq
                     logger.logDevWarn(ConfigUtils.getName(), GW_DOWN_LINK, productId, deviceName, "device is received set_thing_property message while offline");
                     return;
                 }
-                deviceDownLinkHandler.onEventUploadResponse(device, Response.decode(data));
                 OneJSONRequest request = OneJSONRequest.decode(data);
                 deviceDownLinkHandler.onPropertySetRequest(device, request.getId(), request.getVersion(), request.getParams());
                 break;
@@ -211,7 +210,6 @@ public final class ProtocolMessageHandler extends SimpleChannelInboundHandler<Mq
                     logger.logDevWarn(ConfigUtils.getName(), GW_DOWN_LINK, productId, deviceName, "device is received get_desired_response message while offline");
                     return;
                 }
-                deviceDownLinkHandler.onEventUploadResponse(device, Response.decode(data));
                 deviceDownLinkHandler.onDesiredGetResponse(device, Response.decode(data));
                 break;
             case DELETE_DESIRED_RESPONSE: {
@@ -219,7 +217,6 @@ public final class ProtocolMessageHandler extends SimpleChannelInboundHandler<Mq
                     logger.logDevWarn(ConfigUtils.getName(), GW_DOWN_LINK, productId, deviceName, "device is received delete_desired_response message while offline");
                     return;
                 }
-                deviceDownLinkHandler.onEventUploadResponse(device, Response.decode(data));
                 deviceDownLinkHandler.onDesiredDeleteResponse(device, Response.decode(data));
                 break;
             }

@@ -15,30 +15,35 @@ public class Response {
 
     private Integer code;
 
-    private Object msg;
+    private String msg;
 
-    public Response(String id, Integer code, Object msg) {
+    private JsonObject data;
+
+    public Response(String id, Integer code, String msg) {
         this.id = id;
         this.code = code;
         this.msg = msg;
     }
 
+    public Response(String id, Integer code, String msg, JsonObject data) {
+        this.id = id;
+        this.code = code;
+        this.msg = msg;
+        this.data = data;
+    }
+
     public static Response decode(byte[] data) {
         JsonObject jsonObject = GsonUtil.GSON.fromJson(new String(data), JsonObject.class);
-        Object msg = null;
-        JsonElement msgElement = jsonObject.get("msg");
-        if (msgElement != null) {
-            if (msgElement.isJsonPrimitive()) {
-                msg = msgElement.getAsString();
-            } else if (msgElement.isJsonObject()) {
-                msg = msgElement.getAsJsonObject();
-            } else if (msgElement.isJsonArray()) {
-                msg = msgElement.getAsJsonArray();
-            }
+        JsonObject jsonData = null;
+        JsonElement msgElement = jsonObject.get("data");
+        if (msgElement != null && msgElement.isJsonObject()) {
+            jsonData = msgElement.getAsJsonObject();
         }
+
         return new Response(jsonObject.get("id") == null ? null : jsonObject.get("id").getAsString(),
                 jsonObject.get("code") == null ? null : jsonObject.get("code").getAsInt(),
-                msg);
+                jsonObject.get("msg") == null ? null : jsonObject.get("msg").getAsString(),
+                jsonData);
     }
 
     public String getId() {
@@ -57,12 +62,20 @@ public class Response {
         this.code = code;
     }
 
-    public Object getMsg() {
+    public String getMsg() {
         return msg;
     }
 
-    public void setMsg(Object msg) {
+    public void setMsg(String msg) {
         this.msg = msg;
+    }
+
+    public JsonObject getData() {
+        return data;
+    }
+
+    public void setData(JsonObject data) {
+        this.data = data;
     }
 
     public byte[] encode() {
@@ -72,9 +85,10 @@ public class Response {
     @Override
     public String toString() {
         return "Response{" +
-                "id=" + id +
+                "id='" + id + '\'' +
                 ", code=" + code +
-                ", msg=" + msg +
+                ", msg='" + msg + '\'' +
+                ", data=" + data +
                 '}';
     }
 }
