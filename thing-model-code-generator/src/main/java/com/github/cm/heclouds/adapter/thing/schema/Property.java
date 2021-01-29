@@ -1,11 +1,10 @@
 package com.github.cm.heclouds.adapter.thing.schema;
 
-import lombok.Data;
+import com.github.cm.heclouds.adapter.thing.schema.services.DataType;
 
 /**
  * 属性
  */
-@Data
 public class Property {
     /**
      * 必填 标识符
@@ -32,4 +31,51 @@ public class Property {
      */
     private String desc;
 
+    public String getIdentifier() {
+        return identifier;
+    }
+
+    public void setIdentifier(String identifier) {
+        this.identifier = identifier;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getAccessMode() {
+        return accessMode;
+    }
+
+    public void setAccessMode(String accessMode) {
+        this.accessMode = accessMode;
+    }
+
+    public String getFunctionType() {
+        return functionType;
+    }
+
+    public void setFunctionType(String functionType) {
+        this.functionType = functionType;
+    }
+
+    public DataType getDataType() {
+        return dataType;
+    }
+
+    public void setDataType(DataType dataType) {
+        this.dataType = dataType;
+    }
+
+    public String getDesc() {
+        return desc;
+    }
+
+    public void setDesc(String desc) {
+        this.desc = desc;
+    }
 }

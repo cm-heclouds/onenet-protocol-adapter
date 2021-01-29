@@ -2,13 +2,16 @@ package com.github.cm.heclouds.adapter;
 
 import com.github.cm.heclouds.adapter.api.ConfigUtils;
 import com.github.cm.heclouds.adapter.config.Config;
+import com.github.cm.heclouds.adapter.core.logging.ILogger;
+import com.github.cm.heclouds.adapter.entity.sdk.ConnectionType;
 import com.github.cm.heclouds.adapter.exceptions.IllegalConfigException;
 import com.github.cm.heclouds.adapter.extensions.metric.Metric;
 import com.github.cm.heclouds.adapter.mqttadapter.ControlSessionManager;
 import com.github.cm.heclouds.adapter.mqttadapter.MqttClient;
+import com.github.cm.heclouds.adapter.mqttadapter.ProxySessionManager;
 import com.github.cm.heclouds.adapter.mqttadapter.mqtt.promise.MqttConnectResult;
+import com.github.cm.heclouds.adapter.utils.ConnectSessionNettyUtils;
 import com.github.cm.heclouds.adapter.utils.SasTokenGenerator;
-import com.github.cm.heclouds.adapter.core.logging.ILogger;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.util.internal.StringUtil;
@@ -49,7 +52,13 @@ public final class ProtocolAdapterService {
         if (StringUtil.isNullOrEmpty(config.getInstanceName())) {
             throw new IllegalConfigException("config \"instanceName\" must be present");
         }
+        if (ControlSessionManager.config != null) {
+            throw new IllegalStateException("duplicated initiation of control session");
+        }
+        ControlSessionManager.config = config;
+        ControlSessionManager.logger = ConfigUtils.getLogger();
         MqttClient mqttClient = new MqttClient(config);
+        ConnectSessionNettyUtils.setConnectionType(mqttClient.getChannel(), ConnectionType.CONTROL_CONNECTION);
         String sasToken = SasTokenGenerator.adapterSasToken(config);
         String serviceId = config.getServiceId();
         String instanceName = config.getInstanceName();
@@ -77,11 +86,15 @@ public final class ProtocolAdapterService {
             Channel channel = initControlConnection(config, true);
             ControlSessionManager.initControlSession(config, channel);
 
+            ProxySessionManager.initProxySessions();
+
             BigDecimal b = new BigDecimal((System.currentTimeMillis() - beginTime) / 1000);
             double time = b.setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();
             logger.logInnerInfo(ConfigUtils.getName(), LAUNCH, "started protocol adapter sdk in " + time + " seconds");
-            // 启动统计
-            metric.start(60, TimeUnit.SECONDS);
+            if (config.getEnableMetrics()) {
+                // 启动统计
+                metric.start(60, TimeUnit.SECONDS);
+            }
         } catch (Exception e) {
             logger.logCtrlConnError(ConfigUtils.getName(), INIT, serviceId, instanceName, "failed", e);
             System.exit(1);

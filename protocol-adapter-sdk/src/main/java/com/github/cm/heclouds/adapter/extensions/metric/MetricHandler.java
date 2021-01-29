@@ -1,6 +1,5 @@
 package com.github.cm.heclouds.adapter.extensions.metric;
 
-import com.github.cm.heclouds.adapter.config.Config;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandler;
@@ -18,7 +17,7 @@ public class MetricHandler extends ChannelDuplexHandler {
     private MetricHandler() {
     }
 
-    public static MetricHandler getInstance(Config config) {
+    public static MetricHandler getInstance() {
         MetricHandler handler = MetricHandler.Inner.INSTANCE;
         handler.setMetric(Metric.INSTANCE);
         return handler;
@@ -32,14 +31,14 @@ public class MetricHandler extends ChannelDuplexHandler {
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
         ByteBuf byteBuf = (ByteBuf) msg;
         metric.incrDownFlow(byteBuf.readableBytes());
-        ctx.fireChannelRead(msg);
+        ctx.fireChannelRead(byteBuf);
     }
 
     @Override
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
         ByteBuf byteBuf = (ByteBuf) msg;
         metric.incrUpFlow(byteBuf.readableBytes());
-        ctx.write(msg, promise);
+        ctx.write(byteBuf, promise);
     }
 
     private static class Inner {

@@ -58,7 +58,7 @@
     </root>
 
     <!--日志异步到文件 -->
-    <logger name="com.cmiot.adapter" level="INFO" additivity="false">
+    <logger name="com.github.cm.heclouds.adapter" level="INFO" additivity="false">
         <appender-ref ref="FILE"/>
         <appender-ref ref="FILE_ERROR"/>
         <appender-ref ref="STDOUT"/>

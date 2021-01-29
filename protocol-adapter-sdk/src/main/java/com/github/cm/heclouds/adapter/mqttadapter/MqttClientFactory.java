@@ -30,7 +30,7 @@ final class MqttClientFactory {
     /**
      * 初始化Netty Client
      *
-     * @param config  配置
+     * @param config 配置
      * @return 连接channel
      */
     static Channel initializeNettyClient(Config config) {
@@ -49,18 +49,20 @@ final class MqttClientFactory {
         b.channel(channelClass);
         b.option(ChannelOption.SO_KEEPALIVE, true);
         b.option(ChannelOption.TCP_NODELAY, true);
-        Boolean finalTlsSupport = config.getTlsSupport();
+        Boolean finalTlsSupport = config.getEnableTls();
         b.handler(new ChannelInitializer<SocketChannel>() {
             @Override
             public void initChannel(SocketChannel ch) {
                 ChannelPipeline p = ch.pipeline();
-                p.addLast("metricHandler", MetricHandler.getInstance(config));
+                if (config.getEnableMetrics()) {
+                    p.addLast("metricHandler", MetricHandler.getInstance());
+                }
                 p.addLast("idleStateHandler", new IdleStateHandler(60, 60, 0));
                 p.addLast("mqttDecoder", new MqttDecoder());
                 p.addLast("mqttPingHandler", new MqttPingHandler(60));
                 p.addLast("mqttEncoder", MqttEncoder.INSTANCE);
                 p.addLast("mqttHandler", new MqttHandler());
-                p.addLast("protocolMessageHandler", ProtocolMessageHandler.INSTANCE);
+                p.addLast("protocolMessageHandler", new ProtocolMessageHandler(config));
 
                 if (finalTlsSupport) {
                     p.addLast("sslHandler", new NettySocketSslHandler());

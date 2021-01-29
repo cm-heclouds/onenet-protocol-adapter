@@ -1,11 +1,12 @@
 package com.github.cm.heclouds.adapter.protocolhub.tcp.config;
 
-import com.github.cm.heclouds.adapter.protocolhub.tcp.TcpProtocolHubService;
-import com.github.cm.heclouds.adapter.protocolhub.tcp.custom.TcpDeviceUpLinkHandler;
 import com.github.cm.heclouds.adapter.core.config.CoreConfig;
 import com.github.cm.heclouds.adapter.core.logging.ILogger;
 import com.github.cm.heclouds.adapter.core.logging.LoggerFormat;
 import com.github.cm.heclouds.adapter.core.utils.CoreConfigUtils;
+import com.github.cm.heclouds.adapter.protocolhub.tcp.TcpProtocolHubService;
+import com.github.cm.heclouds.adapter.protocolhub.tcp.config.fileconfig.TcpFileConfig;
+import com.github.cm.heclouds.adapter.protocolhub.tcp.custom.TcpDeviceUpLinkHandler;
 import io.netty.channel.ChannelPipeline;
 import io.netty.util.internal.StringUtil;
 
@@ -30,15 +31,15 @@ public abstract class TcpProtocolHubConfig {
     /**
      * TCP协议站名称，非必填
      */
-    private String name = DEFAULT_NAME;
+    private String name = null;
     /**
      * TCP协议站启动地址，非必填
      */
-    private String host;
+    private String host = null;
     /**
      * TCP协议站启动端口号，非必填
      */
-    private Integer port = DEFAULT_PORT;
+    private Integer port = null;
     /**
      * 上行数据处理，必填
      */
@@ -60,6 +61,15 @@ public abstract class TcpProtocolHubConfig {
     }
 
     public void init() {
+        if (StringUtil.isNullOrEmpty(name)) {
+            name = TcpFileConfig.getInstance().getName();
+        }
+        if (StringUtil.isNullOrEmpty(host)) {
+            host = TcpFileConfig.getInstance().getHost();
+        }
+        if (port == null) {
+            port = TcpFileConfig.getInstance().getPort();
+        }
         new TcpProtocolHubService(this).start();
     }
 
@@ -96,6 +106,9 @@ public abstract class TcpProtocolHubConfig {
     }
 
     public String getName() {
+        if (StringUtil.isNullOrEmpty(name)) {
+            name = DEFAULT_NAME;
+        }
         return name;
     }
 

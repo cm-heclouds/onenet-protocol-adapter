@@ -1,4 +1,4 @@
-package com.github.cm.heclouds.adapter.entity;
+package com.github.cm.heclouds.adapter.entity.sdk;
 
 import io.netty.channel.Channel;
 

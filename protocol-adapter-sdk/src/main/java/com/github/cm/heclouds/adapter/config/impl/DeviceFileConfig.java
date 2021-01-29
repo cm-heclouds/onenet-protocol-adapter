@@ -5,7 +5,7 @@ import com.github.cm.heclouds.adapter.config.IDeviceConfig;
 import com.github.cm.heclouds.adapter.core.entity.Device;
 import com.github.cm.heclouds.adapter.core.logging.ILogger;
 import com.github.cm.heclouds.adapter.core.logging.LoggerFormat;
-import com.github.cm.heclouds.adapter.core.utils.FileConfigUtil;
+import com.github.cm.heclouds.adapter.core.utils.FileConfigUtils;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigFactory;
@@ -17,7 +17,6 @@ import org.apache.commons.io.monitor.FileAlterationObserver;
 
 import java.io.File;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -86,19 +85,19 @@ public final class DeviceFileConfig implements IDeviceConfig {
             }
 
             Config deviceConfig = config.getConfig(originalIdentity);
-            String productId = FileConfigUtil.getStringIfExists(deviceConfig, ConfigConsts.PRODUCT_ID);
-            String deviceName = FileConfigUtil.getStringIfExists(deviceConfig, ConfigConsts.DEVICE_NAME);
-            String deviceKey = FileConfigUtil.getStringIfExists(deviceConfig, ConfigConsts.DEVICE_KEY);
+            String productId = FileConfigUtils.getStringIfExists(deviceConfig, ConfigConsts.PRODUCT_ID);
+            String deviceName = FileConfigUtils.getStringIfExists(deviceConfig, ConfigConsts.DEVICE_NAME);
+            String key = FileConfigUtils.getStringIfExists(deviceConfig, ConfigConsts.KEY);
 
-            if (!StringUtil.isNullOrEmpty(deviceKey) && productId != null) {
-                deviceName = URLEncoder.encode(deviceName, "utf-8");
+            if (productId != null && deviceName != null) {
                 device = Device.newBuilder()
                         .productId(productId)
                         .deviceName(deviceName)
-                        .deviceKey(deviceKey)
+                        .key(key)
                         .build();
                 configCache.put(originalIdentity, device);
                 originalIdentityCache.put(productId + "-" + deviceName, originalIdentity);
+
             } else {
                 logger.logInnerWarn(ConfigUtils.getName(), RUNTIME, "illegal device config, productId and deviceName must be present");
             }

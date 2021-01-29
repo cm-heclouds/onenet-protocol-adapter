@@ -33,7 +33,6 @@ public class ConfigUtils {
         }
         return config;
     }
-
     public static void setConfig(Config config) {
         ConfigUtils.config = config;
     }
@@ -61,7 +60,7 @@ public class ConfigUtils {
     public static IDeviceConfig getDeviceConfig() {
         try {
             if (config == null) {
-                log.error("cannot get IDeviceConfig, please initialize 'com.cmiot.adapter.config.Config' and configure DeviceConfig first");
+                log.error("cannot get IDeviceConfig, please initialize 'com.github.cm.heclouds.adapter.config.Config' and configure DeviceConfig first");
                 System.exit(1);
             }
             return config.getDeviceConfig();

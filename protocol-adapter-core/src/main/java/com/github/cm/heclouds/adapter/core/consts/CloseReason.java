@@ -27,7 +27,7 @@ public enum CloseReason {
     /**
      * 由平台接入机主动断开连接
      */
-    CLOSE_BY_ONENET("CloseByProtocolHub"),
+    CLOSE_BY_ONENET("CloseByOneNET"),
     /**
      * 因超时断开连接
      */

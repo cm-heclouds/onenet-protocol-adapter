@@ -1,4 +1,4 @@
-package com.github.cm.heclouds.adapter.entity;
+package com.github.cm.heclouds.adapter.entity.sdk;
 
 /**
  * 设备连接Session实体类，

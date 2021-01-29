@@ -1,6 +1,6 @@
 package com.github.cm.heclouds.adapter.mqttadapter;
 
-import com.github.cm.heclouds.adapter.entity.DeviceSession;
+import com.github.cm.heclouds.adapter.entity.sdk.DeviceSession;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;

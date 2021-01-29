@@ -1,7 +1,8 @@
-package com.github.cm.heclouds.adapter.core.entity;
+package com.github.cm.heclouds.adapter.entity.request;
 
 
-import com.github.cm.heclouds.adapter.core.utils.GsonUtil;
+import com.github.cm.heclouds.adapter.core.entity.OneJSONRequest;
+import com.github.cm.heclouds.adapter.core.utils.GsonUtils;
 import com.google.gson.JsonObject;
 
 import java.util.List;
@@ -9,54 +10,45 @@ import java.util.List;
 /**
  * 清除设备属性请求
  */
-public class DelDesiredRequest extends Request {
+public class DelDesiredRequest extends OneJSONRequest {
 
-    private List<Param> params;
+    private transient List<Param> paramList;
 
     public DelDesiredRequest() {
     }
 
-    public DelDesiredRequest(String version, List<Param> params) {
-        super(version);
-        this.params = params;
-    }
-
-    public DelDesiredRequest(List<Param> params) {
-        this.params = params;
-    }
-
-    public DelDesiredRequest(String id, String version, List<Param> params) {
-        super(id, version);
-        this.params = params;
+    public DelDesiredRequest(List<Param> paramList) {
+        this.paramList = paramList;
     }
 
     public static DelDesiredRequest decode(String property) {
-        return GsonUtil.GSON.fromJson(property, DelDesiredRequest.class);
+        return GsonUtils.GSON.fromJson(property, DelDesiredRequest.class);
     }
 
     public static DelDesiredRequest decode(byte[] property) {
         return decode(new String(property));
     }
 
-    public List<Param> getParams() {
-        return params;
+    public List<Param> getParamList() {
+        return paramList;
     }
 
-    public void setParams(List<Param> params) {
-        this.params = params;
+    public void setParamList(List<Param> paramList) {
+        this.paramList = paramList;
     }
 
     @Override
     public String toJsonString() {
         JsonObject jsonObject = new JsonObject();
-        for (Param param : params) {
+        for (Param param : paramList) {
             JsonObject versionJsonObject = new JsonObject();
             if (param.getVersion() != null) {
                 versionJsonObject.addProperty("version", param.getVersion());
             }
             jsonObject.add(param.getProperty(), versionJsonObject);
         }
-        return new OneJSONRequest(getId(), getVersion(), jsonObject).toJsonString();
+        setParams(jsonObject);
+        return GsonUtils.GSON.toJson(this);
     }
 
     public static class Param {

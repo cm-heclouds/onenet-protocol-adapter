@@ -6,13 +6,13 @@
     <parent>
         <groupId>com.github.cm-heclouds</groupId>
         <artifactId>protocol-adapter-parent</artifactId>
-        <version>1.0.3</version>
+        <version>1.0.4</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>protocol-adapter-sdk</artifactId>
     <name>protocol-adapter-sdk</name>
-    <description>OneNET Studio泛协议接入SDK</description>
+    <description>OneNET Studio泛协议接入适配SDK</description>
 
     <dependencies>
         <dependency>

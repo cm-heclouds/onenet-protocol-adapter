@@ -13,20 +13,19 @@ public final class Device {
     private String productId;
 
     /**
-     * 设备Key，登录时不可为空
-     * 当设备为子设备时，设备key为注册码
+     * 设备名称
      */
     private String deviceName;
 
     /**
-     * 设备Key，登录时不可为空
+     * 设备key/产品key，登录时不可为空
      */
-    private String deviceKey;
+    private String key;
 
     private Device(Builder builder) {
         setProductId(builder.productId);
         setDeviceName(builder.deviceName);
-        setDeviceKey(builder.deviceKey);
+        setKey(builder.key);
     }
 
     public static Builder newBuilder() {
@@ -49,18 +48,18 @@ public final class Device {
         this.deviceName = deviceName;
     }
 
-    public String getDeviceKey() {
-        return deviceKey;
+    public String getKey() {
+        return key;
     }
 
-    public void setDeviceKey(String deviceKey) {
-        this.deviceKey = deviceKey;
+    public void setKey(String key) {
+        this.key = key;
     }
 
     public static final class Builder {
         private String productId;
         private String deviceName;
-        private String deviceKey;
+        private String key;
 
         private Builder() {
         }
@@ -75,8 +74,8 @@ public final class Device {
             return this;
         }
 
-        public Builder deviceKey(String val) {
-            deviceKey = val;
+        public Builder key(String val) {
+            key = val;
             return this;
         }
 

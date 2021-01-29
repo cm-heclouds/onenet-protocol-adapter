@@ -1,7 +1,7 @@
 package com.github.cm.heclouds.adapter.utils;
 
-import com.github.cm.heclouds.adapter.entity.ConnectionType;
-import com.github.cm.heclouds.adapter.entity.ProxySession;
+import com.github.cm.heclouds.adapter.entity.sdk.ConnectionType;
+import com.github.cm.heclouds.adapter.entity.sdk.ProxySession;
 import io.netty.channel.Channel;
 import io.netty.util.AttributeKey;
 
@@ -36,7 +36,7 @@ public final class ConnectSessionNettyUtils {
     }
 
     public static ConnectionType connectionType(Channel channel) {
-        ConnectionType connectionType = null;
+        ConnectionType connectionType = ConnectionType.UNKNOWN;
         if (null != channel.attr(ConnectSessionNettyUtils.ATTR_KEY_CONNECTION_TYPE).get()) {
             connectionType = channel.attr(ConnectSessionNettyUtils.ATTR_KEY_CONNECTION_TYPE).get();
         }

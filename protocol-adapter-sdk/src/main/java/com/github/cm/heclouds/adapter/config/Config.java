@@ -2,16 +2,22 @@ package com.github.cm.heclouds.adapter.config;
 
 import com.github.cm.heclouds.adapter.ProtocolAdapterService;
 import com.github.cm.heclouds.adapter.api.ConfigUtils;
+import com.github.cm.heclouds.adapter.config.impl.AdapterFileConfig;
 import com.github.cm.heclouds.adapter.config.impl.DeviceFileConfig;
-import com.github.cm.heclouds.adapter.custom.DeviceDownLinkHandler;
-import com.github.cm.heclouds.adapter.utils.InetSocketAddressUtils;
 import com.github.cm.heclouds.adapter.core.config.CoreConfig;
 import com.github.cm.heclouds.adapter.core.logging.ILogger;
 import com.github.cm.heclouds.adapter.core.logging.LoggerFormat;
 import com.github.cm.heclouds.adapter.core.utils.CoreConfigUtils;
+import com.github.cm.heclouds.adapter.handler.DefaultDeviceDownLinkHandler;
+import com.github.cm.heclouds.adapter.handler.DownLinkRequestHandler;
+import com.github.cm.heclouds.adapter.handler.subdev.DefaultSubDeviceDownLinkRequestHandler;
+import com.github.cm.heclouds.adapter.handler.subdev.SubDeviceDownLinkRequestHandler;
+import com.github.cm.heclouds.adapter.utils.InetSocketAddressUtils;
 import io.netty.util.internal.StringUtil;
 
 import java.net.InetSocketAddress;
+
+import static com.github.cm.heclouds.adapter.config.impl.ConfigConsts.*;
 
 /**
  * SDK配置类
@@ -32,17 +38,21 @@ public class Config {
      */
     private static final String DEFAULT_CONNECTION_HOST_NO_TLS = "218.201.45.7:1883";
     /**
-     * 默认平台接入机连接地址，非加密
+     * 默认平台接入机连接地址，加密
      */
     private static final String DEFAULT_CONNECTION_HOST_TLS = "183.230.102.116:8883";
     /**
-     * 默认SDK和平台接入机之间的控制连接断开后不重连
-     */
-    private static final Boolean DEFAULT_CTRL_RECONNECT = Boolean.FALSE;
-    /**
      * 默认SDK和平台接入机之间不使用加密传输
      */
-    private static final Boolean DEFAULT_TLS_SUPPORT = Boolean.FALSE;
+    private static final Boolean DEFAULT_ENABLE_TLS = Boolean.FALSE;
+    /**
+     * 默认SDK打印统计日志
+     */
+    private static final Boolean DEFAULT_ENABLE_METRICS = Boolean.TRUE;
+    /**
+     * 默认SDK和平台接入机之间的控制连接断开后不重连
+     */
+    private static final Boolean DEFAULT_ENABLE_CTRL_RECONNECT = Boolean.FALSE;
     /**
      * 默认指数退避触发条件
      */
@@ -51,7 +61,6 @@ public class Config {
      * 默认退避倍数
      */
     private static final Integer DEFAULT_BACKOFF_EXP = 4;
-
     /**
      * 日志
      */
@@ -59,51 +68,59 @@ public class Config {
     /**
      * SDK协议站名称，非必填
      */
-    private String name = DEFAULT_NAME;
+    private String name = null;
     /**
      * 平台接入机连接地址，非必填
      */
-    private String connectionHost;
+    private String connectionHost = null;
     /**
      * 泛协议接入服务ID，必填
      */
-    private String serviceId;
+    private String serviceId = null;
     /**
      * 泛协议接入服务实例名，必填
      */
-    private String instanceName;
+    private String instanceName = null;
     /**
      * 泛协议接入服务实例Key，必填
      */
-    private String instanceKey;
+    private String instanceKey = null;
     /**
      * 和平台接入机之间是否使用加密传输，默认值为false
      */
-    private Boolean tlsSupport;
+    private Boolean enableTls = null;
+    /**
+     * 是否打印统计日志，默认值为true
+     */
+    private Boolean enableMetrics = null;
     /**
      * 和平台接入机之间的控制连接异常断开后的初始重连等待时间，默认值为30秒
      */
-    private Boolean ctrlReconnect;
+    private Boolean enableCtrlReconnect = null;
     /**
      * 和平台接入机之间的控制连接断开后重连次数，非必填，默认值为3
      */
-    private Long ctrlReconnectInterval;
+    private Long ctrlReconnectInterval = null;
     /**
      * 指数退避触发条件，默认2
      */
-    private Integer backoffReachTimes;
+    private Integer backoffReachTimes = null;
     /**
      * 退避倍数，默认4
      */
-    private Integer backoffExp;
+    private Integer backoffExp = null;
     /**
      * 设备配置类，非必填，默认为{@link DeviceFileConfig}
      */
-    private IDeviceConfig deviceConfig;
+    private IDeviceConfig deviceConfig = null;
     /**
-     * 下行数据处理，必填
+     * 平台下行请求数据处理，必填
      */
-    private DeviceDownLinkHandler deviceDownLinkHandler;
+    private DownLinkRequestHandler downLinkRequestHandler = null;
+    /**
+     * 平台子设备下行请求数据处理，必填
+     */
+    private SubDeviceDownLinkRequestHandler subDeviceDownLinkRequestHandler = null;
 
     public Config(ILogger logger) {
         this.logger = logger;
@@ -117,21 +134,52 @@ public class Config {
      * 初始化配置
      */
     public void init() {
+        if (StringUtil.isNullOrEmpty(name)) {
+            name = AdapterFileConfig.getInstance().getName();
+        }
+        if (StringUtil.isNullOrEmpty(connectionHost)) {
+            connectionHost = AdapterFileConfig.getInstance().getConnectionHost();
+        }
+        if (StringUtil.isNullOrEmpty(serviceId)) {
+            serviceId = AdapterFileConfig.getInstance().getServiceId();
+        }
+        if (StringUtil.isNullOrEmpty(instanceName)) {
+            instanceName = AdapterFileConfig.getInstance().getInstanceName();
+        }
+        if (StringUtil.isNullOrEmpty(instanceKey)) {
+            instanceKey = AdapterFileConfig.getInstance().getInstanceKey();
+        }
+        if (enableTls == null) {
+            enableTls = AdapterFileConfig.getInstance().enableTls();
+        }
+        if (enableMetrics == null) {
+            enableMetrics = AdapterFileConfig.getInstance().enableMetrics();
+        }
+        if (enableCtrlReconnect == null) {
+            enableCtrlReconnect = AdapterFileConfig.getInstance().enableCtrlReconnect();
+        }
+        if (ctrlReconnectInterval == null) {
+            ctrlReconnectInterval = AdapterFileConfig.getInstance().getCtrlReconnectInterval();
+        }
+        if (deviceConfig == null) {
+            deviceConfig = DeviceFileConfig.getInstance();
+        }
         new ProtocolAdapterService(this).start();
-        if (this.deviceConfig != null && this.deviceConfig instanceof DeviceFileConfig) {
-            ((DeviceFileConfig) this.deviceConfig).initFileDeviceConfig();
+        if (deviceConfig != null && deviceConfig instanceof DeviceFileConfig) {
+            ((DeviceFileConfig) deviceConfig).initFileDeviceConfig();
         }
     }
 
     public Config adapterConfig(IAdapterConfig adapterConfig) {
-        this.name = StringUtil.isNullOrEmpty(adapterConfig.getName()) ? this.name : adapterConfig.getName();
-        this.connectionHost = adapterConfig.getConnectionHost();
-        this.serviceId = adapterConfig.getServiceId();
-        this.instanceKey = adapterConfig.getInstanceKey();
-        this.instanceName = adapterConfig.getInstanceName();
-        this.tlsSupport = adapterConfig.tlsSupport();
-        this.ctrlReconnect = adapterConfig.ctrlReconnect();
-        this.ctrlReconnectInterval = adapterConfig.getCtrlReconnectInterval();
+        name = StringUtil.isNullOrEmpty(adapterConfig.getName()) ? name : adapterConfig.getName();
+        connectionHost = adapterConfig.getConnectionHost();
+        serviceId = adapterConfig.getServiceId();
+        instanceName = adapterConfig.getInstanceName();
+        instanceKey = adapterConfig.getInstanceKey();
+        enableTls = adapterConfig.enableTls();
+        enableMetrics = adapterConfig.enableMetrics();
+        enableCtrlReconnect = adapterConfig.enableCtrlReconnect();
+        ctrlReconnectInterval = adapterConfig.getCtrlReconnectInterval();
         return this;
     }
 
@@ -160,26 +208,34 @@ public class Config {
         return this;
     }
 
-    public Config tlsSupport(Boolean tlsSupport) {
-        this.tlsSupport = tlsSupport;
+    public Config enableTls(Boolean enableTls) {
+        this.enableTls = enableTls;
         return this;
     }
 
-    public Config ctrlReconnect(Boolean ctrlReconnect) {
-        this.ctrlReconnect = ctrlReconnect;
+    public Config enableMetrics(Boolean enableMetrics) {
+        this.enableMetrics = enableMetrics;
         return this;
     }
 
-    public void ctrlReconnectInterval(Long ctrlReconnectInterval) {
+    public Config enableCtrlReconnect(Boolean enableCtrlReconnect) {
+        this.enableCtrlReconnect = enableCtrlReconnect;
+        return this;
+    }
+
+    public Config ctrlReconnectInterval(Long ctrlReconnectInterval) {
         this.ctrlReconnectInterval = ctrlReconnectInterval;
+        return this;
     }
 
-    public void backoffReachTimes(Integer backoffReachTimes) {
+    public Config backoffReachTimes(Integer backoffReachTimes) {
         this.backoffReachTimes = backoffReachTimes;
+        return this;
     }
 
-    public void backoffExp(Integer backoffExp) {
+    public Config backoffExp(Integer backoffExp) {
         this.backoffExp = backoffExp;
+        return this;
     }
 
     public Config deviceConfig(IDeviceConfig deviceConfig) {
@@ -187,8 +243,13 @@ public class Config {
         return this;
     }
 
-    public Config deviceDownLinkHandler(DeviceDownLinkHandler deviceDownLinkHandler) {
-        this.deviceDownLinkHandler = deviceDownLinkHandler;
+    public Config downLinkRequestHandler(DownLinkRequestHandler downLinkRequestHandler) {
+        this.downLinkRequestHandler = downLinkRequestHandler;
+        return this;
+    }
+
+    public Config subDeviceDownLinkRequestHandler(SubDeviceDownLinkRequestHandler subDeviceDownLinkRequestHandler) {
+        this.subDeviceDownLinkRequestHandler = subDeviceDownLinkRequestHandler;
         return this;
     }
 
@@ -197,13 +258,16 @@ public class Config {
     }
 
     public String getName() {
+        if (StringUtil.isNullOrEmpty(name)) {
+            name = DEFAULT_NAME;
+        }
         return name;
     }
 
     public String getConnectionHost() {
         String desc;
         if (StringUtil.isNullOrEmpty(connectionHost)) {
-            if (tlsSupport != null && tlsSupport) {
+            if (enableTls != null && enableTls) {
                 desc = "config 'connectionHost' is not set, using default value: " + DEFAULT_CONNECTION_HOST_TLS;
                 connectionHost = DEFAULT_CONNECTION_HOST_TLS;
             } else {
@@ -227,51 +291,60 @@ public class Config {
         return instanceKey;
     }
 
-    public Boolean getTlsSupport() {
+    public Boolean getEnableTls() {
         if (!StringUtil.isNullOrEmpty(connectionHost)) {
             InetSocketAddress address = InetSocketAddressUtils.getConnectionHost(connectionHost);
             int port = address.getPort();
             String desc = null;
             if (port == 1883) {
-                if (tlsSupport == null) {
-                    desc = "config 'tlsSupport' is not set, using default value: false";
-                } else if (tlsSupport) {
-                    desc = "config 'tlsSupport' is not matched with 'connectionHost', using matched value: false";
+                if (enableTls == null) {
+                    desc = "config '" + ADAPTER_ENABLE_TLS + "' is not set, using default value: false";
+                } else if (enableTls) {
+                    desc = "config '" + ADAPTER_ENABLE_TLS + "' is not matched with '" + CONNECTION_HOST + "', using matched value: false";
                 }
-                tlsSupport = false;
+                enableTls = false;
             } else if (port == 8883) {
-                if (tlsSupport == null) {
-                    desc = "config 'tlsSupport' is not set, using default value: true";
-                } else if (!tlsSupport) {
-                    desc = "config 'tlsSupport' is not matched with 'connectionHost', using matched value: true";
+                if (enableTls == null) {
+                    desc = "config '" + ADAPTER_ENABLE_TLS + "' is not set, using default value: true";
+                } else if (!enableTls) {
+                    desc = "config '" + ADAPTER_ENABLE_TLS + "' is not matched with '" + CONNECTION_HOST + "', using matched value: true";
                 }
-                tlsSupport = true;
+                enableTls = true;
             }
             if (desc != null) {
                 getLogger().logInnerWarn(name, LoggerFormat.Action.INIT, desc);
             }
-            return tlsSupport;
+            return enableTls;
         } else {
-            if (tlsSupport == null) {
-                String desc = "config 'tlsSupport' is not set, using default value: " + DEFAULT_TLS_SUPPORT;
+            if (enableTls == null) {
+                String desc = "config '" + ADAPTER_ENABLE_TLS + "' is not set, using default value: " + DEFAULT_ENABLE_TLS;
                 getLogger().logInnerWarn(name, LoggerFormat.Action.INIT, desc);
-                tlsSupport = DEFAULT_TLS_SUPPORT;
+                enableTls = DEFAULT_ENABLE_TLS;
             }
-            return tlsSupport;
+            return enableTls;
         }
     }
 
-    public Boolean getCtrlReconnect() {
-        if (ctrlReconnect == null) {
-            String desc = "config 'ctrlReconnect' is not set, using default value: " + DEFAULT_CTRL_RECONNECT;
+    public Boolean getEnableMetrics() {
+        if (enableMetrics == null) {
+            String desc = "config '" + ADAPTER_ENABLE_METRICS + "' is not set, using default value: " + DEFAULT_ENABLE_METRICS;
             getLogger().logInnerWarn(name, LoggerFormat.Action.INIT, desc);
-            ctrlReconnect = DEFAULT_CTRL_RECONNECT;
+            enableMetrics = DEFAULT_ENABLE_METRICS;
         }
-        return ctrlReconnect;
+        return enableMetrics;
+    }
+
+    public Boolean getEnableCtrlReconnect() {
+        if (enableCtrlReconnect == null) {
+            String desc = "config '" + ENABLE_CTRL_RECONNECT + "' is not set, using default value: " + DEFAULT_ENABLE_CTRL_RECONNECT;
+            getLogger().logInnerWarn(name, LoggerFormat.Action.INIT, desc);
+            enableCtrlReconnect = DEFAULT_ENABLE_CTRL_RECONNECT;
+        }
+        return enableCtrlReconnect;
     }
 
     public Long getCtrlReconnectInterval() {
-        if (!getCtrlReconnect()) {
+        if (!getEnableCtrlReconnect()) {
             ctrlReconnectInterval = 0L;
             String desc = "config 'ctrlReconnectInterval' is set to 0 to match with config 'ctrlReconnect' = false";
             getLogger().logInnerWarn(name, LoggerFormat.Action.INIT, desc);
@@ -297,13 +370,22 @@ public class Config {
         return deviceConfig;
     }
 
-    public DeviceDownLinkHandler getDeviceDownLinkHandler() {
-        if (deviceDownLinkHandler == null) {
-            String desc = "DeviceDownLinkHandler is not configured!";
-            getLogger().logInnerError(name, LoggerFormat.Action.INIT, desc, null);
-            System.exit(0);
+    public DownLinkRequestHandler getDownLinkRequestHandler() {
+        if (downLinkRequestHandler == null) {
+            String desc = "DownLinkRequestHandler is not configured, use default.";
+            downLinkRequestHandler = new DefaultDeviceDownLinkHandler();
+            getLogger().logInnerWarn(name, LoggerFormat.Action.INIT, desc);
         }
-        return deviceDownLinkHandler;
+        return downLinkRequestHandler;
+    }
+
+    public SubDeviceDownLinkRequestHandler getSubDeviceDownLinkRequestHandler() {
+        if (subDeviceDownLinkRequestHandler == null) {
+            String desc = "SubDeviceDownLinkRequestHandler is not configured, use default.";
+            subDeviceDownLinkRequestHandler = new DefaultSubDeviceDownLinkRequestHandler();
+            getLogger().logInnerWarn(name, LoggerFormat.Action.INIT, desc);
+        }
+        return subDeviceDownLinkRequestHandler;
     }
 
     @Override
@@ -314,8 +396,9 @@ public class Config {
                 ", serviceId='" + serviceId + '\'' +
                 ", instanceName='" + instanceName + '\'' +
                 ", instanceKey='" + instanceKey + '\'' +
-                ", tlsSupport=" + tlsSupport +
-                ", ctrlReconnect=" + ctrlReconnect +
+                ", enableTls=" + enableTls +
+                ", enableMetrics=" + enableMetrics +
+                ", enableCtrlReconnect=" + enableCtrlReconnect +
                 ", ctrlReconnectInterval=" + ctrlReconnectInterval +
                 ", backoffReachTimes=" + backoffReachTimes +
                 ", backoffExp=" + backoffExp +

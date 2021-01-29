@@ -1,4 +1,4 @@
-package com.github.cm.heclouds.adapter.entity;
+package com.github.cm.heclouds.adapter.entity.sdk;
 
 import com.github.cm.heclouds.adapter.mqttadapter.MqttClient;
 import io.netty.channel.Channel;

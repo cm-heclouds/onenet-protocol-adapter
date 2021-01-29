@@ -1,6 +1,7 @@
-package com.github.cm.heclouds.adapter.core.entity;
+package com.github.cm.heclouds.adapter.entity.request;
 
-import com.github.cm.heclouds.adapter.core.utils.GsonUtil;
+import com.github.cm.heclouds.adapter.core.entity.Request;
+import com.github.cm.heclouds.adapter.core.utils.GsonUtils;
 
 import java.util.List;
 
@@ -14,22 +15,12 @@ public class GetDesiredRequest extends Request {
     public GetDesiredRequest() {
     }
 
-    public GetDesiredRequest(String version, List<String> params) {
-        super(version);
-        this.params = params;
-    }
-
     public GetDesiredRequest(List<String> params) {
         this.params = params;
     }
 
-    public GetDesiredRequest(String id, String version, List<String> params) {
-        super(id, version);
-        this.params = params;
-    }
-
     public static GetDesiredRequest decode(String property) {
-        return GsonUtil.GSON.fromJson(property, GetDesiredRequest.class);
+        return GsonUtils.GSON.fromJson(property, GetDesiredRequest.class);
     }
 
     public static GetDesiredRequest decode(byte[] property) {

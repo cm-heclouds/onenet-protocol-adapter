@@ -1,4 +1,4 @@
-package com.github.cm.heclouds.adapter.entity;
+package com.github.cm.heclouds.adapter.entity.sdk;
 
 /**
  * 连接类型枚举
@@ -13,6 +13,11 @@ public enum ConnectionType {
     /**
      * 代理连接
      */
-    PROXY_CONNECTION
+    PROXY_CONNECTION,
+
+    /**
+     * 未知
+     */
+    UNKNOWN
 
 }

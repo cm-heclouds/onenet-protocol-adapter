@@ -3,10 +3,8 @@ package com.github.cm.heclouds.adapter.mqttadapter;
 import com.github.cm.heclouds.adapter.ProtocolAdapterService;
 import com.github.cm.heclouds.adapter.api.ConfigUtils;
 import com.github.cm.heclouds.adapter.config.Config;
-import com.github.cm.heclouds.adapter.entity.ConnectionType;
-import com.github.cm.heclouds.adapter.entity.ControlSession;
-import com.github.cm.heclouds.adapter.utils.ConnectSessionNettyUtils;
 import com.github.cm.heclouds.adapter.core.logging.ILogger;
+import com.github.cm.heclouds.adapter.entity.sdk.ControlSession;
 import io.netty.channel.Channel;
 
 import java.util.concurrent.TimeUnit;
@@ -34,6 +32,8 @@ public final class ControlSessionManager {
     private static int backoffExp;
 
     private static volatile boolean isConnected;
+
+    private static volatile boolean isInit;
 
     private ControlSessionManager() {
     }
@@ -73,12 +73,11 @@ public final class ControlSessionManager {
      * @param channel 控制连接channel
      */
     public static void initControlSession(Config config, Channel channel) {
-        if (ControlSessionManager.config != null) {
-            throw new IllegalStateException("duplicated initiation of control session");
+        if (isInit) {
+            logger.logInnerWarn(ConfigUtils.getName(), RUNTIME, "ctrl connection was already initialized");
+            return;
         }
-        ControlSessionManager.config = config;
-        logger = ConfigUtils.getLogger();
-        isCtrlReconnect = config.getCtrlReconnect();
+        isCtrlReconnect = config.getEnableCtrlReconnect();
         ctrlReconnectCount = new AtomicInteger(0);
         ctrlReconnectInterval = new AtomicLong(config.getCtrlReconnectInterval());
         backoffReachTimes = config.getBackoffReachTimes();
@@ -89,7 +88,7 @@ public final class ControlSessionManager {
                 .channel(channel)
                 .build();
         isConnected = true;
-        ConnectSessionNettyUtils.setConnectionType(channel, ConnectionType.CONTROL_CONNECTION);
+        isInit = true;
     }
 
     /**
@@ -111,7 +110,6 @@ public final class ControlSessionManager {
                 controlSession.setChannel(channel);
                 ctrlReconnectCount.set(0);
                 ctrlReconnectInterval = new AtomicLong(config.getCtrlReconnectInterval());
-                ConnectSessionNettyUtils.setConnectionType(channel, ConnectionType.CONTROL_CONNECTION);
                 logger.logInnerInfo(ConfigUtils.getName(), RUNTIME, "ctrl reconnected");
             } catch (Exception e) {
                 logger.logInnerError(ConfigUtils.getName(), RUNTIME, "ctrl reconnect failed", e);

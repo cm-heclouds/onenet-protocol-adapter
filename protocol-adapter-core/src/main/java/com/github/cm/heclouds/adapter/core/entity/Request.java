@@ -1,36 +1,27 @@
 package com.github.cm.heclouds.adapter.core.entity;
 
 
-import com.github.cm.heclouds.adapter.core.utils.GsonUtil;
+import com.github.cm.heclouds.adapter.core.utils.GsonUtils;
+import com.github.cm.heclouds.adapter.core.utils.IdUtils;
 
 import java.nio.charset.Charset;
 
 /**
- *
+ * 请求基类
  */
 public class Request {
 
-    private String id = String.valueOf(System.currentTimeMillis());
-    private String version = "1.0";
+    private final String id = IdUtils.generateId();
+    private final String version = "1.0";
 
     public Request() {
     }
 
-    public Request(String version) {
-        this.version = version;
-    }
-
-    public Request(String id, String version) {
-        if (id != null) {
-            this.id = id;
-        }
-        if (version != null) {
-            this.version = version;
-        }
+    public Request(String jsonString) {
     }
 
     public static Request decode(String property) {
-        return GsonUtil.GSON.fromJson(property, Request.class);
+        return GsonUtils.GSON.fromJson(property, Request.class);
     }
 
     public static Request decode(byte[] property) {
@@ -41,16 +32,8 @@ public class Request {
         return id;
     }
 
-    public void setId(String id) {
-        this.id = id;
-    }
-
     public String getVersion() {
         return version;
-    }
-
-    public void setVersion(String version) {
-        this.version = version;
     }
 
     public byte[] encode() {
@@ -58,6 +41,6 @@ public class Request {
     }
 
     public String toJsonString() {
-        return GsonUtil.GSON.toJson(this);
+        return GsonUtils.GSON.toJson(this);
     }
 }

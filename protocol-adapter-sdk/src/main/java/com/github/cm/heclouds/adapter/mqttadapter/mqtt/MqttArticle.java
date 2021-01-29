@@ -20,12 +20,10 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufHolder;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.util.IllegalReferenceCountException;
-import lombok.Data;
 
 import static java.util.Objects.requireNonNull;
 
 
-@Data
 public class MqttArticle implements ByteBufHolder {
 
     private MqttQoS qos;
@@ -147,5 +145,41 @@ public class MqttArticle implements ByteBufHolder {
     public MqttArticle touch(Object hint) {
         content().touch(hint);
         return this;
+    }
+
+    public MqttQoS getQos() {
+        return qos;
+    }
+
+    public void setQos(MqttQoS qos) {
+        this.qos = qos;
+    }
+
+    public void setRetain(boolean retain) {
+        this.retain = retain;
+    }
+
+    public String getTopic() {
+        return topic;
+    }
+
+    public void setTopic(String topic) {
+        this.topic = topic;
+    }
+
+    public ByteBuf getPayload() {
+        return payload;
+    }
+
+    public void setPayload(ByteBuf payload) {
+        this.payload = payload;
+    }
+
+    public boolean isWill() {
+        return isWill;
+    }
+
+    public void setWill(boolean will) {
+        isWill = will;
     }
 }

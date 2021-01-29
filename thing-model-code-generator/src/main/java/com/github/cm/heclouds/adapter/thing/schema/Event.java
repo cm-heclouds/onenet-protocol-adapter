@@ -1,14 +1,11 @@
 package com.github.cm.heclouds.adapter.thing.schema;
 
 
-import lombok.Data;
-
 import java.util.List;
 
 /**
  * 事件
  */
-@Data
 public class Event {
     /**
      * 必填 标识符
@@ -34,4 +31,52 @@ public class Event {
      * 选填 描述 长度不超过255
      */
     private String desc;
+
+    public String getIdentifier() {
+        return identifier;
+    }
+
+    public void setIdentifier(String identifier) {
+        this.identifier = identifier;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getEventType() {
+        return eventType;
+    }
+
+    public void setEventType(String eventType) {
+        this.eventType = eventType;
+    }
+
+    public String getFunctionType() {
+        return functionType;
+    }
+
+    public void setFunctionType(String functionType) {
+        this.functionType = functionType;
+    }
+
+    public List<Property> getOutputData() {
+        return outputData;
+    }
+
+    public void setOutputData(List<Property> outputData) {
+        this.outputData = outputData;
+    }
+
+    public String getDesc() {
+        return desc;
+    }
+
+    public void setDesc(String desc) {
+        this.desc = desc;
+    }
 }

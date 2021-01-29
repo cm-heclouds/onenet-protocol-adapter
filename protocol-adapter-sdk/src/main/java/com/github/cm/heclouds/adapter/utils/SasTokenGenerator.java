@@ -48,14 +48,14 @@ public class SasTokenGenerator {
      *
      * @param productId  产品ID
      * @param deviceName 设备名称
-     * @param deviceKey  设备Key
+     * @param key        设备key或产品Key
      * @return 设备SasToken
      */
-    public static String deviceSasToken(String productId, String deviceName, String deviceKey) {
-        if (deviceKey.contains(PRODUCT) && deviceKey.contains(DEVICE_VERSION)) {
-            return deviceKey;
+    public static String deviceSasToken(String productId, String deviceName, String key) {
+        if (key.contains(PRODUCT + "%2F")) {
+            return key;
         }
-        return genSasToken(PRODUCT, productId, DEVICE, deviceName, deviceKey, DEVICE_VERSION);
+        return genSasToken(PRODUCT, productId, DEVICE, deviceName, key, DEVICE_VERSION);
     }
 
     /**

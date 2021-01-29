@@ -2,11 +2,11 @@ package com.github.cm.heclouds.adapter.extensions.metric;
 
 import com.github.cm.heclouds.adapter.api.ConfigUtils;
 import com.github.cm.heclouds.adapter.config.Config;
-import com.github.cm.heclouds.adapter.entity.DeviceSession;
-import com.github.cm.heclouds.adapter.entity.ProxySession;
-import com.github.cm.heclouds.adapter.mqttadapter.ProxySessionManager;
 import com.github.cm.heclouds.adapter.core.logging.ILogger;
+import com.github.cm.heclouds.adapter.entity.sdk.DeviceSession;
+import com.github.cm.heclouds.adapter.entity.sdk.ProxySession;
 import com.github.cm.heclouds.adapter.mqttadapter.DeviceSessionManager;
+import com.github.cm.heclouds.adapter.mqttadapter.ProxySessionManager;
 
 import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentMap;

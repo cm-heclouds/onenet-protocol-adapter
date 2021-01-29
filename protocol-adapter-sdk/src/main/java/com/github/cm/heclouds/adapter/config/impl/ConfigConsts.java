@@ -15,21 +15,22 @@ public final class ConfigConsts {
 
     public static final String ADAPTER_INSTANCE_KEY = "instanceKey";
 
-    public static final String ADAPTER_TLS_SUPPORT = "tlsSupport";
+    public static final String ADAPTER_ENABLE_TLS = "enableTls";
 
-    public static final String CTRL_RECONNECT = "ctrlReconnect";
+    public static final String ADAPTER_ENABLE_METRICS = "enableMetrics";
+
+    public static final String ENABLE_CTRL_RECONNECT = "enableCtrlReconnect";
 
     public static final String CTRL_RECONNECT_TIMES = "ctrlReconnectTimes";
 
     public static final String CTRL_RECONNECT_INTERVAL = "ctrlReconnectInterval";
 
-
     public static final String PRODUCT_ID = "productId";
 
     public static final String DEVICE_NAME = "deviceName";
 
-    public static final String DEVICE_KEY = "deviceKey";
+    public static final String KEY = "key";
 
-    public static final long MAX_PROXY_CONNECTION_CREATION_INTERVAL_MS = 2000;
+    public static final long MAX_PROXY_CONNECTION_CREATION_INTERVAL_MS = 0;
 
 }

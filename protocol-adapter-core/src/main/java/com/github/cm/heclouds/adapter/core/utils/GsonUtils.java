@@ -5,10 +5,10 @@ import com.google.gson.Gson;
 /**
  * Gson工具类
  */
-public class GsonUtil {
+public class GsonUtils {
 
     public static final Gson GSON = new Gson();
 
-    private GsonUtil() {
+    private GsonUtils() {
     }
 }

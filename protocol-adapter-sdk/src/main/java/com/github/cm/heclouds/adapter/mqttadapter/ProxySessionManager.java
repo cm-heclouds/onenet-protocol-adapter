@@ -1,16 +1,17 @@
 package com.github.cm.heclouds.adapter.mqttadapter;
 
 import com.github.cm.heclouds.adapter.api.ConfigUtils;
+import com.github.cm.heclouds.adapter.core.entity.ReturnCode;
 import com.github.cm.heclouds.adapter.config.IDeviceConfig;
 import com.github.cm.heclouds.adapter.config.impl.ConfigConsts;
 import com.github.cm.heclouds.adapter.core.consts.CloseReason;
 import com.github.cm.heclouds.adapter.core.entity.Device;
-import com.github.cm.heclouds.adapter.core.entity.Response;
 import com.github.cm.heclouds.adapter.core.logging.ILogger;
 import com.github.cm.heclouds.adapter.core.utils.DeviceUtils;
-import com.github.cm.heclouds.adapter.entity.ConnectionType;
-import com.github.cm.heclouds.adapter.entity.DeviceSession;
-import com.github.cm.heclouds.adapter.entity.ProxySession;
+import com.github.cm.heclouds.adapter.core.entity.Response;
+import com.github.cm.heclouds.adapter.entity.sdk.ConnectionType;
+import com.github.cm.heclouds.adapter.entity.sdk.DeviceSession;
+import com.github.cm.heclouds.adapter.entity.sdk.ProxySession;
 import com.github.cm.heclouds.adapter.mqttadapter.handler.UpLinkChannelHandler;
 import com.github.cm.heclouds.adapter.mqttadapter.mqtt.promise.MqttConnectResult;
 import com.github.cm.heclouds.adapter.utils.ConnectSessionNettyUtils;
@@ -51,6 +52,21 @@ public final class ProxySessionManager {
         return PROXY_SESSION_POOL;
     }
 
+    private static volatile boolean isInit;
+
+    public static void initProxySessions() {
+        if (isInit) {
+            LOGGER.logInnerWarn(ConfigUtils.getName(), RUNTIME, "proxy connections were already initialized");
+            return;
+        }
+        while (true) {
+            if (initNewProxyConnection() == null) {
+                isInit = true;
+                return;
+            }
+        }
+    }
+
     /**
      * 创建新的代理连接Session
      * <p>
@@ -70,7 +86,6 @@ public final class ProxySessionManager {
                 .connected(true)
                 .isDevicesReachedLimit(false)
                 .build();
-        ConnectSessionNettyUtils.setConnectionType(channel, ConnectionType.PROXY_CONNECTION);
         ConnectSessionNettyUtils.setProxySession(channel, proxySession);
         return proxySession;
     }
@@ -95,6 +110,7 @@ public final class ProxySessionManager {
     public static void handleConnectionLost(ProxySession proxySession) {
         LOGGER.logPxyConnWarn(ConfigUtils.getName(), DISCONNECT, null, proxySession.getProxyId());
         Iterator<Map.Entry<Pair<String, String>, DeviceSession>> iterator = proxySession.getProxyDevAssociation().entrySet().iterator();
+        removeProxySession(proxySession.getProxyId());
         // 所有代理设备下线
         while (iterator.hasNext()) {
             Map.Entry<Pair<String, String>, DeviceSession> entry = iterator.next();
@@ -105,11 +121,10 @@ public final class ProxySessionManager {
             DeviceUtils.setDeviceCloseReason(device, CloseReason.CLOSE_DUE_TO_PROXY_CONNECTION_LOST);
             DeviceSessionManager.handleDeviceOffline(deviceSession);
             // 主动通知设备下线
-            ConfigUtils.getConfig().getDeviceDownLinkHandler()
-                    .onDeviceNotifiedLogout(device, new Response(null, 1061, "disconnected proxy connection"));
+            ConfigUtils.getConfig().getDownLinkRequestHandler()
+                    .onDeviceNotifiedLogout(device, new Response("", ReturnCode.PROXY_DISCONNECTED.getCode(), ReturnCode.PROXY_DISCONNECTED.getMsg()));
             iterator.remove();
         }
-        removeProxySession(proxySession.getProxyId());
     }
 
     /**
@@ -121,7 +136,7 @@ public final class ProxySessionManager {
      */
     public static boolean isProxiedDevicesReachedLimit(DeviceSession deviceSession, Response response) {
         ProxySession proxySession = deviceSession.getProxySession();
-        if (response.getCode() == 0x8B) {
+        if (response.getCode() == 0x41f) {
             proxySession.setDevicesReachedLimit(true);
             deviceSession.setProxySession(null);
             Device deviceEntity = DEVICE_CONFIG.getDeviceEntity(DEVICE_CONFIG.getOriginalIdentity(deviceSession.getProductId(), deviceSession.getDeviceName()));
@@ -182,6 +197,7 @@ public final class ProxySessionManager {
             return null;
         }
         MqttClient mqttClient = new MqttClient(ConfigUtils.getConfig());
+        ConnectSessionNettyUtils.setConnectionType(mqttClient.getChannel(), ConnectionType.PROXY_CONNECTION);
         MqttConnectResult result;
         try {
             String serviceId = ControlSessionManager.config.getServiceId();
@@ -204,12 +220,16 @@ public final class ProxySessionManager {
                 LOGGER.logPxyConnInfo(ConfigUtils.getName(), INIT, "init new proxy connection succeed", clientId);
                 break;
             case CONNECTION_REFUSED_NOT_AUTHORIZED:
-                LOGGER.logPxyConnWarn(ConfigUtils.getName(), INIT, "init new proxy connection failed due to proxy connections reached limit", clientId);
+                if (isInit) {
+                    LOGGER.logPxyConnWarn(ConfigUtils.getName(), INIT, "init new proxy connection failed due to proxy connections reached limit", clientId);
+                }
                 break;
             case CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD:
             case CONNECTION_REFUSED_SERVER_UNAVAILABLE:
             default:
-                LOGGER.logPxyConnWarn(ConfigUtils.getName(), INIT, "init new proxy connection failed due to " + result.returnCode().toString(), clientId);
+                if (isInit) {
+                    LOGGER.logPxyConnWarn(ConfigUtils.getName(), INIT, "init new proxy connection failed due to " + result.returnCode().toString(), clientId);
+                }
                 break;
         }
         return proxySession;

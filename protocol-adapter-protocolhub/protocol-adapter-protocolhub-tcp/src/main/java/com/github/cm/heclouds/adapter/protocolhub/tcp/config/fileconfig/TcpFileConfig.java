@@ -1,6 +1,6 @@
 package com.github.cm.heclouds.adapter.protocolhub.tcp.config.fileconfig;
 
-import com.github.cm.heclouds.adapter.core.utils.FileConfigUtil;
+import com.github.cm.heclouds.adapter.core.utils.FileConfigUtils;
 import com.github.cm.heclouds.adapter.protocolhub.tcp.config.ITcpConfig;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -69,7 +69,7 @@ public final class TcpFileConfig implements ITcpConfig {
             return (String) configCache.get(name);
         }
 
-        String value = FileConfigUtil.getStringIfExists(config, name);
+        String value = FileConfigUtils.getStringIfExists(config, name);
         if (!StringUtil.isNullOrEmpty(value)) {
             configCache.put(name, value);
         }
@@ -81,7 +81,7 @@ public final class TcpFileConfig implements ITcpConfig {
         if (configCache.containsKey(name)) {
             return (Integer) configCache.get(name);
         }
-        Integer value = FileConfigUtil.getIntegerIfExists(config, name);
+        Integer value = FileConfigUtils.getIntegerIfExists(config, name);
         if (value != null) {
             configCache.put(name, value);
         }

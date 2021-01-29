@@ -19,11 +19,9 @@ package com.github.cm.heclouds.adapter.mqttadapter.mqtt.promise;
 import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.util.Timeout;
 import io.netty.util.concurrent.EventExecutor;
-import lombok.Data;
 
 import java.util.concurrent.TimeoutException;
 
-@Data
 public class MqttConnectPromise extends MqttPromise<MqttConnectResult> {
 
     private byte[] clientId;
@@ -83,5 +81,29 @@ public class MqttConnectPromise extends MqttPromise<MqttConnectResult> {
     @Override
     public void run(Timeout timeout) {
         tryFailure(new TimeoutException("No response message: expected=CONNACK"));
+    }
+
+    public byte[] getClientId() {
+        return clientId;
+    }
+
+    public void setClientId(byte[] clientId) {
+        this.clientId = clientId;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public byte[] getPassword() {
+        return password;
+    }
+
+    public void setPassword(byte[] password) {
+        this.password = password;
     }
 }

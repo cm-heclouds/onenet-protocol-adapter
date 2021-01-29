@@ -5,7 +5,7 @@ import com.typesafe.config.Config;
 /**
  * 文件配置工具类
  */
-public final class FileConfigUtil {
+public final class FileConfigUtils {
 
     /**
      * 从配置文件中读取字符串

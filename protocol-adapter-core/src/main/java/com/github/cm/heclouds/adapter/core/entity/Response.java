@@ -1,6 +1,6 @@
 package com.github.cm.heclouds.adapter.core.entity;
 
-import com.github.cm.heclouds.adapter.core.utils.GsonUtil;
+import com.github.cm.heclouds.adapter.core.utils.GsonUtils;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
@@ -33,7 +33,7 @@ public class Response {
     }
 
     public static Response decode(byte[] data) {
-        JsonObject jsonObject = GsonUtil.GSON.fromJson(new String(data), JsonObject.class);
+        JsonObject jsonObject = GsonUtils.GSON.fromJson(new String(data), JsonObject.class);
         JsonObject jsonData = null;
         JsonElement msgElement = jsonObject.get("data");
         if (msgElement != null && msgElement.isJsonObject()) {
@@ -79,16 +79,20 @@ public class Response {
     }
 
     public byte[] encode() {
-        return GsonUtil.GSON.toJson(this).getBytes(Charset.defaultCharset());
+        return GsonUtils.GSON.toJson(this).getBytes(Charset.defaultCharset());
     }
 
     @Override
     public String toString() {
-        return "Response{" +
+        StringBuilder stringBuilder = new StringBuilder("Response{" +
                 "id='" + id + '\'' +
                 ", code=" + code +
-                ", msg='" + msg + '\'' +
-                ", data=" + data +
-                '}';
+                ", msg='" + msg + '\'');
+        if (data != null) {
+            stringBuilder.append(", data=")
+                    .append(data);
+        }
+        stringBuilder.append("}");
+        return stringBuilder.toString();
     }
 }

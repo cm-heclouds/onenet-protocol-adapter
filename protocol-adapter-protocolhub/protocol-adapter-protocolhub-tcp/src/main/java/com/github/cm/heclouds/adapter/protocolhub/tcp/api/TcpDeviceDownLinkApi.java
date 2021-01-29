@@ -1,13 +1,14 @@
 package com.github.cm.heclouds.adapter.protocolhub.tcp.api;
 
-import com.github.cm.heclouds.adapter.protocolhub.tcp.session.TcpDeviceSession;
-import com.github.cm.heclouds.adapter.protocolhub.tcp.session.TcpDeviceSessionManager;
 import com.github.cm.heclouds.adapter.core.entity.Device;
 import com.github.cm.heclouds.adapter.core.logging.ILogger;
 import com.github.cm.heclouds.adapter.protocolhub.tcp.config.TcpProtocolHubConfigUtils;
+import com.github.cm.heclouds.adapter.protocolhub.tcp.session.TcpDeviceSession;
+import com.github.cm.heclouds.adapter.protocolhub.tcp.session.TcpDeviceSessionManager;
 import io.netty.channel.Channel;
 
 import static com.github.cm.heclouds.adapter.core.logging.LoggerFormat.Action.GW_DOWN_LINK;
+import static io.netty.channel.ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE;
 
 
 /**
@@ -65,8 +66,8 @@ public final class TcpDeviceDownLinkApi {
             return true;
         }
 
-        channel.close();
+        channel.close().addListener(FIRE_EXCEPTION_ON_FAILURE);
 
-        return false;
+        return true;
     }
 }

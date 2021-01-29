@@ -44,14 +44,22 @@ public interface IAdapterConfig {
      *
      * @return 是否支持TLS加密
      */
-    Boolean tlsSupport();
+    Boolean enableTls();
+
+
+    /**
+     * 是否启用统计功能，此方法可返回null或空值，默认为true
+     *
+     * @return 是否支持TLS加密
+     */
+    Boolean enableMetrics();
 
     /**
      * 和平台接入机之间的控制连接断开后是否重连，此方法可返回null或空值，默认为false
      *
      * @return 是否支持TLS加密
      */
-    Boolean ctrlReconnect();
+    Boolean enableCtrlReconnect();
 
     /**
      * 和平台接入机之间的控制连接异常断开后的初始重连等待时间（默认值：30，单位：秒）

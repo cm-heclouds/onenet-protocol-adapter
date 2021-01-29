@@ -1,7 +1,7 @@
 package com.github.cm.heclouds.adapter.config.impl;
 
 import com.github.cm.heclouds.adapter.config.IAdapterConfig;
-import com.github.cm.heclouds.adapter.core.utils.FileConfigUtil;
+import com.github.cm.heclouds.adapter.core.utils.FileConfigUtils;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import io.netty.util.internal.StringUtil;
@@ -77,13 +77,19 @@ public final class AdapterFileConfig implements IAdapterConfig {
     }
 
     @Override
-    public Boolean tlsSupport() {
-        return getBoolean(ConfigConsts.ADAPTER_TLS_SUPPORT);
+    public Boolean enableTls() {
+        return getBoolean(ConfigConsts.ADAPTER_ENABLE_TLS);
     }
 
     @Override
-    public Boolean ctrlReconnect() {
-        return getBoolean(ConfigConsts.CTRL_RECONNECT);
+    public Boolean enableMetrics() {
+        return getBoolean(ConfigConsts.ADAPTER_ENABLE_METRICS);
+    }
+
+
+    @Override
+    public Boolean enableCtrlReconnect() {
+        return getBoolean(ConfigConsts.ENABLE_CTRL_RECONNECT);
     }
 
     @Override
@@ -96,7 +102,7 @@ public final class AdapterFileConfig implements IAdapterConfig {
             return (String) configCache.get(name);
         }
 
-        String value = FileConfigUtil.getStringIfExists(config, name);
+        String value = FileConfigUtils.getStringIfExists(config, name);
         if (!StringUtil.isNullOrEmpty(value)) {
             configCache.put(name, value);
         }
@@ -107,7 +113,7 @@ public final class AdapterFileConfig implements IAdapterConfig {
         if (configCache.containsKey(name)) {
             return (Boolean) configCache.get(name);
         }
-        Boolean value = FileConfigUtil.getBooleanIfExists(config, name);
+        Boolean value = FileConfigUtils.getBooleanIfExists(config, name);
         if (value != null) {
             configCache.put(name, value);
         }
@@ -118,7 +124,7 @@ public final class AdapterFileConfig implements IAdapterConfig {
         if (configCache.containsKey(name)) {
             return (Integer) configCache.get(name);
         }
-        Integer value = FileConfigUtil.getIntegerIfExists(config, name);
+        Integer value = FileConfigUtils.getIntegerIfExists(config, name);
         if (value != null) {
             configCache.put(name, value);
         }
@@ -129,7 +135,7 @@ public final class AdapterFileConfig implements IAdapterConfig {
         if (configCache.containsKey(name)) {
             return (Long) configCache.get(name);
         }
-        Long value = FileConfigUtil.getLongIfExists(config, name);
+        Long value = FileConfigUtils.getLongIfExists(config, name);
         if (value != null) {
             configCache.put(name, value);
         }

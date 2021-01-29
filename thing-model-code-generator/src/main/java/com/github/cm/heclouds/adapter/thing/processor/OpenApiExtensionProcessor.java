@@ -1,5 +1,6 @@
 package com.github.cm.heclouds.adapter.thing.processor;
 
+import com.github.cm.heclouds.adapter.thing.annotations.ChildDevThingModelConfiguration;
 import com.github.cm.heclouds.adapter.thing.annotations.ThingModelConfiguration;
 import com.google.auto.service.AutoService;
 
@@ -26,6 +27,7 @@ public class OpenApiExtensionProcessor extends AbstractProcessor {
     public Set<String> getSupportedAnnotationTypes() {
         Set<String> annotataions = new LinkedHashSet<>();
         annotataions.add(ThingModelConfiguration.class.getCanonicalName());
+        annotataions.add(ChildDevThingModelConfiguration.class.getCanonicalName());
         return annotataions;
     }
 
@@ -42,6 +44,12 @@ public class OpenApiExtensionProcessor extends AbstractProcessor {
                 processProductConfiguration(element);
             }
         }
+        elements = roundEnvironment.getElementsAnnotatedWith(ChildDevThingModelConfiguration.class);
+        for (Element element : elements) {
+            if (ElementKind.CLASS == element.getKind()) {
+                processChildDevConfiguration(element);
+            }
+        }
         return true;
     }
 
@@ -50,6 +58,17 @@ public class OpenApiExtensionProcessor extends AbstractProcessor {
             String[] configPath = element.getAnnotation(ThingModelConfiguration.class).value();
             for (String path : configPath) {
                 ProductProcessor.doProcessProductConfiguration(path, processingEnv);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void processChildDevConfiguration(Element element) {
+        try {
+            String[] configPath = element.getAnnotation(ChildDevThingModelConfiguration.class).value();
+            for (String path : configPath) {
+                ChildDevProcessor.doProcessProductConfiguration(path, processingEnv);
             }
         } catch (Exception e) {
             e.printStackTrace();

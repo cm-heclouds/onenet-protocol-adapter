@@ -44,6 +44,7 @@ public class Consts {
         public static final String DOUBLE = "double";
         public static final String STRING = "string";
         public static final String ENUM = "enum";
+        public static final String DATE = "date";
         public static final String BITMAP = "bitMap";
         public static final String STRUCT = "struct";
         public static final String ARRAY = "array";

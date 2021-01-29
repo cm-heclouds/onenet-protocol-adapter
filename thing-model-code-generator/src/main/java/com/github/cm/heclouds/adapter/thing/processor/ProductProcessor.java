@@ -1,12 +1,19 @@
 package com.github.cm.heclouds.adapter.thing.processor;
 
-import com.github.cm.heclouds.adapter.core.entity.OneJSONRequest;
-import com.github.cm.heclouds.adapter.thing.schema.*;
-import com.github.cm.heclouds.adapter.thing.util.ProcessorUtil;
-import com.google.gson.JsonArray;
+import com.github.cm.heclouds.adapter.thing.schema.Consts;
+import com.github.cm.heclouds.adapter.thing.schema.Event;
+import com.github.cm.heclouds.adapter.thing.schema.Property;
+import com.github.cm.heclouds.adapter.thing.schema.Schema;
+import com.github.cm.heclouds.adapter.thing.schema.services.Service;
+import com.github.cm.heclouds.adapter.thing.util.CommonUtil;
+import com.github.cm.heclouds.adapter.thing.util.MethodUtil;
+import com.github.cm.heclouds.adapter.thing.util.ModelUtil;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.squareup.javapoet.*;
+import com.squareup.javapoet.CodeBlock;
+import com.squareup.javapoet.JavaFile;
+import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.TypeSpec;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Modifier;
@@ -14,14 +21,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static com.github.cm.heclouds.adapter.thing.util.CommonUtil.*;
+
 /**
  * 处理产品物模型
  */
-class ProductProcessor {
-
-    private static final ClassName CLASS_OPEN_API = ClassName.get(ProcessorUtil.API_EXTENSION_PACKAGE, "OpenApi");
-    private static final ClassName CLASS_DEVICE = ClassName.get("com.github.cm.heclouds.adapter.core.entity", "Device");
-    private static final ClassName CLASS_THING_COMMAND_LISTENER = ClassName.get("com.github.cm.heclouds.adapter.api", "DeviceCommandListener");
+final class ProductProcessor {
 
     static void doProcessProductConfiguration(String configPath, ProcessingEnvironment processingEnv) throws Exception {
 
@@ -29,16 +34,16 @@ class ProductProcessor {
             configPath = ProductProcessor.class.getClassLoader().getResource(configPath).getPath();
         } catch (Exception e) {
             System.out.println("load thing model file failed, file not exist");
-            System.exit(0);
+            return;
         }
         // 转换配置文件
-        String config = ProcessorUtil.readFileToString(configPath);
+        String config = CommonUtil.readFileToString(configPath);
         Schema schema = null;
         try {
-            schema = ProcessorUtil.GSON.fromJson(config, Schema.class);
+            schema = GSON.fromJson(config, Schema.class);
         } catch (Exception e) {
             System.out.println("load thing model file failed, illegal model file");
-            System.exit(0);
+            System.exit(1);
         }
 
         if (schema == null) {
@@ -46,48 +51,99 @@ class ProductProcessor {
             System.exit(0);
         }
 
-        String configFileNameSuffix = ProcessorUtil.getConfigFileSuffix(configPath);
+        String configFileNameSuffix = CommonUtil.getConfigFileSuffix(configPath);
 
-        String openApiExtensionClassName = "OpenApiExtension" + configFileNameSuffix;
+        String adapterApiExtensionClassName = "AdapterApiExtension";
+        String propertyApiExtensionClassName = "Property";
+        String eventApiExtensionClassName = "Event";
+        String serviceExtensionClassName = "Service";
 
-        // 构建 OpenApiExtension 类
-        TypeSpec.Builder openApiExtensionClassBuilder = TypeSpec.classBuilder(openApiExtensionClassName)
-                .addJavadoc("编译器自动生成，请勿修改<p/>\n")
+        // 构建 物模型 类
+        TypeSpec.Builder classBuilder = TypeSpec.classBuilder(configFileNameSuffix)
+                .addJavadoc("编译器自动生成，请勿修改\n")
                 .addJavadoc("\n")
-                .addJavadoc("{@link OpenApi} 扩展类，该类根据配置的功能点自动生成对应的上报方法，开发者根据这些方法实现相应功能即可\n")
+                .addJavadoc("该类根据配置的功能点自动生成对应代码，开发者根据这些方法实现相应功能即可\n")
                 .addModifiers(Modifier.PUBLIC);
 
+        // 构建 AdapterApiExtension 类
+        TypeSpec.Builder adapterApiExtensionClassBuilder = TypeSpec.classBuilder(adapterApiExtensionClassName)
+                .addJavadoc("编译器自动生成，请勿修改\n")
+                .addJavadoc("\n")
+                .addJavadoc("{@link AdapterApi} 扩展类，该类根据配置的功能点自动生成对应的上报方法，开发者根据这些方法实现相应功能即可\n")
+                .addModifiers(Modifier.PUBLIC)
+                .addModifiers(Modifier.STATIC);
+
+        // 构建 Property 类
+        TypeSpec.Builder propertyClassBuilder = TypeSpec.classBuilder(propertyApiExtensionClassName)
+                .addJavadoc("编译器自动生成，请勿修改\n")
+                .addJavadoc("\n")
+                .addJavadoc("该类根据配置的功能点自动生成Property相关类和方法\n")
+                .addModifiers(Modifier.PUBLIC)
+                .addModifiers(Modifier.STATIC);
+
+        // 构建 Event 类
+        TypeSpec.Builder eventClassBuilder = TypeSpec.classBuilder(eventApiExtensionClassName)
+                .addJavadoc("编译器自动生成，请勿修改\n")
+                .addJavadoc("\n")
+                .addJavadoc("该类根据配置的功能点自动生成Event相关类和方法\n")
+                .addModifiers(Modifier.PUBLIC)
+                .addModifiers(Modifier.STATIC);
+
+        // 构建 Service 类
+        TypeSpec.Builder serviceClassBuilder = TypeSpec.classBuilder(serviceExtensionClassName)
+                .addJavadoc("编译器自动生成，请勿修改\n")
+                .addJavadoc("\n")
+                .addJavadoc("该类根据配置的功能点自动生成Service相关类和方法\n")
+                .addModifiers(Modifier.PUBLIC)
+                .addModifiers(Modifier.STATIC);
+
+        // AdapterApiExtension类构造方法
         MethodSpec constructor = MethodSpec.constructorBuilder()
                 .addModifiers(Modifier.PUBLIC)
-                .addParameter(CLASS_OPEN_API, "openApi")
-                .addStatement("this.$N = $N", "openApi", "openApi")
+                .addParameter(CLASS_ADAPTER_API, "adapterApi")
+                .addStatement("this.$N = $N", "adapterApi", "adapterApi")
                 .build();
 
-        TypeSpec.Builder propertiesConstsClassBuilder = TypeSpec.classBuilder("PropertyIdentifier")
+        TypeSpec.Builder propertiesConstsClassBuilder = TypeSpec.classBuilder("Identifier")
                 .addModifiers(Modifier.PUBLIC)
                 .addModifiers(Modifier.STATIC)
                 .addModifiers(Modifier.FINAL)
                 .addJavadoc("属性唯一标识符常量\n");
 
-        TypeSpec.Builder eventsConstsClassBuilder = TypeSpec.classBuilder("EventIdentifier")
+        TypeSpec.Builder eventsConstsClassBuilder = TypeSpec.classBuilder("Identifier")
                 .addModifiers(Modifier.PUBLIC)
                 .addModifiers(Modifier.STATIC)
                 .addModifiers(Modifier.FINAL)
                 .addJavadoc("事件唯一标识符常量\n");
 
-        openApiExtensionClassBuilder.addField(CLASS_OPEN_API, "openApi", Modifier.PRIVATE, Modifier.FINAL)
+        TypeSpec.Builder servicesConstsClassBuilder = TypeSpec.classBuilder("Identifier")
+                .addModifiers(Modifier.PUBLIC)
+                .addModifiers(Modifier.STATIC)
+                .addModifiers(Modifier.FINAL)
+                .addJavadoc("服务唯一标识符常量\n");
+
+        adapterApiExtensionClassBuilder.addField(CLASS_ADAPTER_API, "adapterApi", Modifier.PRIVATE, Modifier.FINAL)
                 .addMethod(constructor);
 
-        TypeSpec.Builder commandListenerClassBuilder = TypeSpec.classBuilder("DeviceCommandListenerExtension" + configFileNameSuffix)
-                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
-                .addSuperinterface(CLASS_THING_COMMAND_LISTENER)
-                .addJavadoc("编译器自动生成，请勿修改<p/>\n")
+        // 物模型属性设置下发请求接收器
+        TypeSpec.Builder propertySetListenerClassBuilder = TypeSpec.classBuilder("DevicePropertySetListenerExtension")
+                .addModifiers(Modifier.PUBLIC, Modifier.STATIC, Modifier.ABSTRACT)
+                .addSuperinterface(CLASS_PROPERTY_SET_REQUEST_LISTENER)
+                .addJavadoc("编译器自动生成，请勿修改\n")
                 .addJavadoc("\n")
-                .addJavadoc("命令响应接收器，实现该类的抽象方法即可。\n");
+                .addJavadoc("物模型属性设置下发请求接收器，实现该类的抽象方法即可。\n");
 
-        // onCommandReceived 方法
-        MethodSpec.Builder onCommandReceivedBuilder = MethodSpec.methodBuilder("onCommandReceived")
-                .addJavadoc("{@link com.cmiot.adapter.api.DeviceCommandListener#onCommandReceived(Device, String, String, JsonObject)}的实现\n")
+        // 物模型服务调用请求接收器
+        TypeSpec.Builder serviceInvokeListenerClassBuilder = TypeSpec.classBuilder("DeviceServiceInvokeListenerExtension")
+                .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)
+                .addSuperinterface(CLASS_SERVICE_INVOKE_REQUEST_LISTENER)
+                .addJavadoc("编译器自动生成，请勿修改\n")
+                .addJavadoc("\n")
+                .addJavadoc("物模型服务调用请求接收器，实现该类的抽象方法即可。\n");
+
+        // onPropertySetRequestReceivedBuilder 方法
+        MethodSpec.Builder onPropertySetRequestReceivedBuilder = MethodSpec.methodBuilder("onRequestReceived")
+                .addJavadoc("{@link com.github.cm.heclouds.adapter.api.DevicePropertySetListener#onRequestReceived(Device, String, String, JsonObject)}的实现\n")
                 .addModifiers(Modifier.PUBLIC)
                 .addAnnotation(Override.class)
                 .addParameter(CLASS_DEVICE, "device")
@@ -95,322 +151,126 @@ class ProductProcessor {
                 .addParameter(String.class, "version")
                 .addParameter(JsonObject.class, "params");
 
-        CodeBlock.Builder forEachBlock = CodeBlock.builder()
+        // onServiceInvokeRequestReceivedBuilder 方法
+        MethodSpec.Builder onServiceInvokeRequestReceivedBuilder = MethodSpec.methodBuilder("onRequestReceived")
+                .addJavadoc("{@link com.github.cm.heclouds.adapter.api.DeviceServiceInvokeListener#onRequestReceived(Device, String, String, String, JsonObject)}的实现\n")
+                .addModifiers(Modifier.PUBLIC)
+                .addAnnotation(Override.class)
+                .addParameter(CLASS_DEVICE, "device")
+                .addParameter(String.class, "identifier")
+                .addParameter(String.class, "id")
+                .addParameter(String.class, "version")
+                .addParameter(JsonObject.class, "params");
+
+        CodeBlock.Builder propertySetListenerForEachBlock = CodeBlock.builder()
                 .beginControlFlow("for ($T<$T, $T> entry : params.entrySet())", Map.Entry.class, String.class, JsonElement.class)
                 .addStatement("$T key = entry.getKey()", String.class)
                 .addStatement("$T value = entry.getValue()", JsonElement.class)
                 .beginControlFlow("switch (key)");
 
+        CodeBlock.Builder serviceInvokeListenerForEachBlock = CodeBlock.builder()
+                .beginControlFlow("switch (identifier)");
+
         List<Property> properties = schema.getProperties();
         List<Event> events = schema.getEvents();
+        List<Service> services = schema.getServices();
 
-        List<MethodSpec> generateMethods = new ArrayList<>();
+        List<MethodSpec> propertyGenerateMethods = new ArrayList<>();
+        List<MethodSpec> eventGenerateMethods = new ArrayList<>();
+        List<MethodSpec> serviceGenerateMethods = new ArrayList<>();
         List<MethodSpec> uploadMethods = new ArrayList<>();
-        List<MethodSpec> onReceiveMethods = new ArrayList<>();
+        List<MethodSpec> propertySetRequestReceiveMethods = new ArrayList<>();
+        List<MethodSpec> serviceInvokeRequestReceiveMethods = new ArrayList<>();
 
         for (Property property : properties) {
             String accessMode = property.getAccessMode();
             if (Consts.AccessMode.READ_AND_WRITE.equals(accessMode)) {
-                onReceiveMethods.add(generateOnReceiveMethod(forEachBlock, property, openApiExtensionClassName));
+                propertySetRequestReceiveMethods.add(MethodUtil.generatePropertySetOnRequestMethod(propertySetListenerForEachBlock, property, configFileNameSuffix));
             }
-            generateMethods.add(generatePropertyGenerateMethods(openApiExtensionClassBuilder, property));
-            uploadMethods.add(generatePropertyUploadMethod(property));
+            propertyGenerateMethods.add(MethodUtil.generatePropertyGenerateMethods(propertyClassBuilder, property));
+            uploadMethods.add(MethodUtil.generatePropertyUploadMethod(property));
             String identifier = property.getIdentifier();
             String name = property.getName();
-            propertiesConstsClassBuilder.addField(ProcessorUtil.generatePublicStaticFinalField(identifier.toUpperCase(), identifier, name));
+            propertiesConstsClassBuilder.addField(CommonUtil.generatePublicStaticFinalField(identifier.toUpperCase(), identifier, name));
         }
 
         for (Event event : events) {
-            generateMethods.add(generateEventGenerateMethod(openApiExtensionClassBuilder, event));
-            uploadMethods.add(generateEventUploadMethod(event));
+            eventGenerateMethods.add(MethodUtil.generateEventGenerateMethod(eventClassBuilder, event));
+            uploadMethods.add(MethodUtil.generateEventUploadMethod(event));
             String identifier = event.getIdentifier();
             String name = event.getName();
-            eventsConstsClassBuilder.addField(ProcessorUtil.generatePublicStaticFinalField(identifier.toUpperCase(), identifier, name));
+            eventsConstsClassBuilder.addField(CommonUtil.generatePublicStaticFinalField(identifier.toUpperCase(), identifier, name));
         }
 
-        openApiExtensionClassBuilder.addType(propertiesConstsClassBuilder.build())
-                .addType(eventsConstsClassBuilder.build());
+        for (Service service : services) {
+            ModelUtil.generateServiceClass(serviceClassBuilder, service);
+            serviceInvokeRequestReceiveMethods.add(MethodUtil.generateServiceInvokeOnRequestMethod(serviceInvokeListenerForEachBlock, service, configFileNameSuffix));
+            serviceGenerateMethods.add(MethodUtil.generateServicesOutputGenerateMethods(service));
+            uploadMethods.add(MethodUtil.generateServiceReplyMethod(service));
+            uploadMethods.add(MethodUtil.generateServiceReplyMethodWithClass(service));
+            String identifier = service.getIdentifier();
+            String name = service.getName();
+            servicesConstsClassBuilder.addField(CommonUtil.generatePublicStaticFinalField(identifier.toUpperCase(), identifier, name));
+        }
 
-        forEachBlock.add("default:\n")
+        propertyClassBuilder.addType(propertiesConstsClassBuilder.build());
+        eventClassBuilder.addType(eventsConstsClassBuilder.build());
+        serviceClassBuilder.addType(servicesConstsClassBuilder.build());
+
+        propertySetListenerForEachBlock.add("default:\n")
                 .indent()
                 .addStatement("break")
                 .unindent()
                 .endControlFlow()
                 .endControlFlow();
 
-        onCommandReceivedBuilder.addCode(forEachBlock.build());
-        commandListenerClassBuilder.addMethod(onCommandReceivedBuilder.build());
+        serviceInvokeListenerForEachBlock.add("default:\n")
+                .indent()
+                .addStatement("break")
+                .unindent()
+                .endControlFlow();
 
-        for (MethodSpec method : generateMethods) {
-            openApiExtensionClassBuilder.addMethod(method);
+        onPropertySetRequestReceivedBuilder.addCode(propertySetListenerForEachBlock.build());
+        propertySetListenerClassBuilder.addMethod(onPropertySetRequestReceivedBuilder.build());
+
+        onServiceInvokeRequestReceivedBuilder.addCode(serviceInvokeListenerForEachBlock.build());
+        serviceInvokeListenerClassBuilder.addMethod(onServiceInvokeRequestReceivedBuilder.build());
+
+        for (MethodSpec method : propertyGenerateMethods) {
+            propertyClassBuilder.addMethod(method);
+        }
+
+        for (MethodSpec method : eventGenerateMethods) {
+            eventClassBuilder.addMethod(method);
+        }
+
+        for (MethodSpec method : serviceGenerateMethods) {
+            serviceClassBuilder.addMethod(method);
         }
 
         for (MethodSpec method : uploadMethods) {
-            openApiExtensionClassBuilder.addMethod(method);
+            adapterApiExtensionClassBuilder.addMethod(method);
         }
 
-        for (MethodSpec methodSpec : onReceiveMethods) {
-            commandListenerClassBuilder.addMethod(methodSpec);
+        for (MethodSpec methodSpec : propertySetRequestReceiveMethods) {
+            propertySetListenerClassBuilder.addMethod(methodSpec);
         }
 
-        TypeSpec openApiExtensionClass = openApiExtensionClassBuilder.build();
-        TypeSpec commandListenerExtensionClass = commandListenerClassBuilder.build();
+        for (MethodSpec methodSpec : serviceInvokeRequestReceiveMethods) {
+            serviceInvokeListenerClassBuilder.addMethod(methodSpec);
+        }
+
+        propertyClassBuilder.addType(propertySetListenerClassBuilder.build());
+        serviceClassBuilder.addType(serviceInvokeListenerClassBuilder.build());
+
+        TypeSpec.Builder builder = classBuilder
+                .addType(adapterApiExtensionClassBuilder.build())
+                .addType(propertyClassBuilder.build())
+                .addType(eventClassBuilder.build())
+                .addType(serviceClassBuilder.build());
+
         // 写入文件
-        JavaFile apiExtensionFile = JavaFile.builder(ProcessorUtil.API_EXTENSION_PACKAGE, openApiExtensionClass).indent("    ").build();
-        JavaFile commandListenerExtensionFile = JavaFile.builder(ProcessorUtil.API_EXTENSION_PACKAGE, commandListenerExtensionClass).indent("    ").build();
-        apiExtensionFile.writeTo(processingEnv.getFiler());
-        commandListenerExtensionFile.writeTo(processingEnv.getFiler());
-    }
-
-    /**
-     * 构建属性上传方法
-     */
-    private static MethodSpec generatePropertyUploadMethod(Property property) {
-        String identifier = property.getIdentifier();
-        String functionName = ProcessorUtil.generateUploadMethodName(identifier, "Property");
-        StringBuilder generateFunction = new StringBuilder(ProcessorUtil.generateGenerateMethodName(identifier, "Property"));
-        generateFunction.append("(id, version, ");
-        MethodSpec.Builder builder = MethodSpec.methodBuilder(functionName)
-                .addJavadoc("上传 " + property.getName() + " 属性\n")
-                .addJavadoc("desc: " + property.getDesc() + "\n")
-                .returns(String.class)
-                .addModifiers(Modifier.PUBLIC);
-        builder.addParameter(CLASS_DEVICE, "device")
-                .addParameter(String.class, "id")
-                .addParameter(String.class, "version");
-
-        DataType propertyDataType = property.getDataType();
-        String propertyIdentifier = property.getIdentifier();
-        switch (propertyDataType.getType()) {
-            case Consts.DataType.BOOL:
-                builder.addParameter(Boolean.class, "value");
-                break;
-            case Consts.DataType.INT32:
-            case Consts.DataType.ENUM:
-            case Consts.DataType.BITMAP:
-                builder.addParameter(Integer.class, "value");
-                break;
-            case Consts.DataType.INT64:
-                builder.addParameter(Long.class, "value");
-                break;
-            case Consts.DataType.FLOAT:
-                builder.addParameter(Float.class, "value");
-                break;
-            case Consts.DataType.DOUBLE:
-                builder.addParameter(Double.class, "value");
-                break;
-            case Consts.DataType.STRING:
-                builder.addParameter(String.class, "value")
-                ;
-                break;
-            case Consts.DataType.STRUCT:
-                propertyIdentifier = property.getIdentifier();
-                builder.addParameter(ClassName.get("", ProcessorUtil.generateName(propertyIdentifier) + "Property"), "value");
-                break;
-            case Consts.DataType.ARRAY:
-                String className = ProcessorUtil.generateName(propertyIdentifier) + "Property";
-                builder.addParameter(ParameterizedTypeName.get(ClassName.get(List.class), TypeVariableName.get(className)), "value");
-                break;
-            default:
-                System.out.println("load thing model file failed, illegal dataType.type:" + propertyDataType.getType());
-                System.exit(0);
-        }
-        builder.addParameter(Long.class, "time");
-        generateFunction.append("value, time)");
-        builder.addStatement("return openApi.uploadProperty(device, $L)", generateFunction.toString());
-        return builder.build();
-    }
-
-    /**
-     * 构建属性生成方法
-     */
-    private static MethodSpec generatePropertyGenerateMethods(TypeSpec.Builder classBuilder, Property property) {
-        String identifier = property.getIdentifier();
-        String identifierReplace = ProcessorUtil.generateLowPrefixName(identifier) + "JsonObject";
-        String functionName = ProcessorUtil.generateGenerateMethodName(identifier, "Property");
-        MethodSpec.Builder builder = MethodSpec.methodBuilder(functionName)
-                .addJavadoc("生成 " + property.getName() + " 属性\n")
-                .addJavadoc("desc: " + property.getDesc() + "\n")
-                .returns(OneJSONRequest.class)
-                .addModifiers(Modifier.PUBLIC);
-        builder.addParameter(String.class, "id")
-                .addParameter(String.class, "version");
-
-        CodeBlock.Builder ifIdIsNull = CodeBlock.builder()
-                .beginControlFlow("if (id == null)")
-                .addStatement("id = $T.valueOf($T.currentTimeMillis())", String.class, System.class)
-                .endControlFlow();
-
-        builder.addCode(ifIdIsNull.build());
-
-        ProcessorUtil.generateProperties(classBuilder, builder, property, identifierReplace);
-
-        builder.addStatement("return new $T(id, version, param)", OneJSONRequest.class);
-        return builder.build();
-    }
-
-    /**
-     * 构建事件上报方法
-     */
-    private static MethodSpec generateEventUploadMethod(Event event) {
-        List<Property> outputData = event.getOutputData();
-        String identifier = event.getIdentifier();
-        String functionName = ProcessorUtil.generateUploadMethodName(identifier, "Event");
-        StringBuilder generateFunction = new StringBuilder(ProcessorUtil.generateGenerateMethodName(identifier, "Event"));
-        generateFunction.append("(id, version, ");
-        MethodSpec.Builder builder = MethodSpec.methodBuilder(functionName)
-                .addJavadoc("上报 " + event.getName() + " 事件\n")
-                .addJavadoc("desc: " + event.getDesc() + "\n")
-                .returns(String.class)
-                .addModifiers(Modifier.PUBLIC);
-        builder.addParameter(CLASS_DEVICE, "device")
-                .addParameter(String.class, "id")
-                .addParameter(String.class, "version");
-
-        for (Property property : outputData) {
-            DataType propertyDataType = property.getDataType();
-            String propertyIdentifier = property.getIdentifier();
-            String valueName = ProcessorUtil.generateLowPrefixName(propertyIdentifier) + "Value";
-            switch (propertyDataType.getType()) {
-                case Consts.DataType.BOOL:
-                    builder.addParameter(Boolean.class, valueName);
-                    break;
-                case Consts.DataType.INT32:
-                case Consts.DataType.ENUM:
-                case Consts.DataType.BITMAP:
-                    builder.addParameter(Integer.class, valueName);
-                    break;
-                case Consts.DataType.INT64:
-                    builder.addParameter(Long.class, valueName);
-                    break;
-                case Consts.DataType.FLOAT:
-                    builder.addParameter(Float.class, valueName);
-                    break;
-                case Consts.DataType.DOUBLE:
-                    builder.addParameter(Double.class, valueName);
-                    break;
-                case Consts.DataType.STRING:
-                    builder.addParameter(String.class, valueName);
-                    break;
-                case Consts.DataType.STRUCT:
-                    propertyIdentifier = property.getIdentifier();
-                    String parameterValue = ProcessorUtil.generateLowPrefixName(propertyIdentifier);
-                    builder.addParameter(ClassName.get("", ProcessorUtil.generateName(propertyIdentifier) + "Event"), parameterValue);
-                    valueName = parameterValue;
-                    break;
-                case Consts.DataType.ARRAY:
-                    parameterValue = ProcessorUtil.generateLowPrefixName(propertyIdentifier) + "List";
-                    String className = ProcessorUtil.generateName(propertyIdentifier) + "Event";
-                    builder.addParameter(ParameterizedTypeName.get(ClassName.get(List.class), TypeVariableName.get(className)), parameterValue);
-                    valueName = parameterValue;
-                    break;
-                default:
-                    System.out.println("load thing model file failed, illegal dataType.type:" + propertyDataType.getType());
-                    System.exit(0);
-            }
-            generateFunction.append(valueName)
-                    .append(", ");
-        }
-        builder.addParameter(Long.class, "time");
-        generateFunction.append("time)");
-        builder.addStatement("return openApi.uploadEvent(device, $L)", generateFunction.toString());
-        return builder.build();
-    }
-
-    /**
-     * 构建事件生成方法
-     */
-    private static MethodSpec generateEventGenerateMethod(TypeSpec.Builder classBuilder, Event event) {
-        String identifier = event.getIdentifier();
-        String identifierReplace = ProcessorUtil.generateLowPrefixName(identifier) + "JsonObject";
-        String functionName = ProcessorUtil.generateGenerateMethodName(identifier, "Event");
-        MethodSpec.Builder builder = MethodSpec.methodBuilder(functionName)
-                .addJavadoc("生成 " + event.getName() + " 事件\n")
-                .addJavadoc("desc: " + event.getDesc() + "\n")
-                .returns(OneJSONRequest.class)
-                .addModifiers(Modifier.PUBLIC);
-        builder.addParameter(String.class, "id")
-                .addParameter(String.class, "version");
-
-        CodeBlock.Builder ifIdIsNull = CodeBlock.builder()
-                .beginControlFlow("if (id == null)")
-                .addStatement("id = $T.valueOf($T.currentTimeMillis())", String.class, System.class)
-                .endControlFlow();
-
-        builder.addCode(ifIdIsNull.build());
-
-        ProcessorUtil.generateEvents(classBuilder, builder, event, identifierReplace);
-
-        builder.addStatement("return new $T(id, version, param)", OneJSONRequest.class);
-        return builder.build();
-    }
-
-    /**
-     * 构建消息接收方法
-     */
-    private static MethodSpec generateOnReceiveMethod(CodeBlock.Builder forEachBlock, Property property, String openApiExtensionClassName) {
-        String identifier = property.getIdentifier();
-        String methodName = ProcessorUtil.generateOnReceiveMethodName(identifier);
-        forEachBlock.add("case $S:\n", identifier)
-                .indent();
-
-        MethodSpec.Builder builder = MethodSpec.methodBuilder(methodName)
-                .addJavadoc("收到 " + property.getName() + " 消息\n")
-                .addModifiers(Modifier.PUBLIC)
-                .addModifiers(Modifier.ABSTRACT)
-                .addParameter(CLASS_DEVICE, "device")
-                .addParameter(String.class, "id")
-                .addParameter(String.class, "version");
-
-        DataType propertyDataType = property.getDataType();
-        switch (propertyDataType.getType()) {
-            case Consts.DataType.BOOL:
-                builder.addParameter(Boolean.class, "value");
-                forEachBlock.addStatement(methodName + "(device, id, version, value.getAsBoolean())");
-                break;
-            case Consts.DataType.INT32:
-            case Consts.DataType.ENUM:
-            case Consts.DataType.BITMAP:
-                builder.addParameter(Integer.class, "value");
-                forEachBlock.addStatement(methodName + "(device, id, version, value.getAsInt())");
-                break;
-            case Consts.DataType.INT64:
-                builder.addParameter(Long.class, "value");
-                forEachBlock.addStatement(methodName + "(device, id, version, value.getAsLong())");
-                break;
-            case Consts.DataType.FLOAT:
-                builder.addParameter(Float.class, "value");
-                forEachBlock.addStatement(methodName + "(device, id, version, value.getAsFloat())");
-                break;
-            case Consts.DataType.DOUBLE:
-                builder.addParameter(Double.class, "value");
-                forEachBlock.addStatement(methodName + "(device, id, version, value.getAsDouble())");
-                break;
-            case Consts.DataType.STRING:
-                builder.addParameter(String.class, "value");
-                forEachBlock.addStatement(methodName + "(device, id, version, value.getAsString())");
-                break;
-            case Consts.DataType.STRUCT:
-                ClassName structClass = ClassName.get(ProcessorUtil.API_EXTENSION_PACKAGE, openApiExtensionClassName + "." + ProcessorUtil.generateName(identifier) + "Property");
-                builder.addParameter(structClass, "value");
-                forEachBlock.addStatement(methodName + "(device, id, version, $T.decode(value.getAsJsonObject()))", structClass);
-                break;
-            case Consts.DataType.ARRAY:
-                String className = openApiExtensionClassName + "." + ProcessorUtil.generateName(identifier) + "Property";
-                builder.addParameter(ParameterizedTypeName.get(ClassName.get(List.class), TypeVariableName.get(className)), "value");
-                forEachBlock.addStatement("$T array = value.getAsJsonArray()", JsonArray.class)
-                        .addStatement("$T<$T> list = new $T()", List.class, ClassName.get(ProcessorUtil.API_EXTENSION_PACKAGE, openApiExtensionClassName + "." + ProcessorUtil.generateName(identifier) + "Property"), ArrayList.class)
-                        .beginControlFlow("for ($T jsonElement : array)", JsonElement.class)
-                        .addStatement("list.add($T.decode(jsonElement.getAsJsonObject()))", ClassName.get(ProcessorUtil.API_EXTENSION_PACKAGE, openApiExtensionClassName + "." + ProcessorUtil.generateName(identifier) + "Property"))
-                        .endControlFlow()
-                        .addStatement(methodName + "(device, id, version, list)");
-                break;
-            default:
-                System.out.println("load thing model file failed, illegal dataType.type:" + propertyDataType.getType());
-                System.exit(0);
-        }
-        forEachBlock.addStatement("break")
-                .unindent();
-        return builder.build();
+        JavaFile classFile = JavaFile.builder(CommonUtil.API_EXTENSION_PACKAGE, builder.build()).indent("    ").build();
+        classFile.writeTo(processingEnv.getFiler());
     }
 }
