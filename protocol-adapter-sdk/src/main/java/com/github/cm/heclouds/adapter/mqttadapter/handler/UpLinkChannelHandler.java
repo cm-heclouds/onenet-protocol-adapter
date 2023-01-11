@@ -21,6 +21,8 @@ import io.netty.channel.Channel;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.util.internal.StringUtil;
 
+import java.nio.charset.StandardCharsets;
+
 import static com.github.cm.heclouds.adapter.core.logging.LoggerFormat.Action.*;
 
 
@@ -47,8 +49,15 @@ public final class UpLinkChannelHandler {
         String productId = device.getProductId();
         String deviceName = device.getDeviceName();
         DeviceSession deviceSession = DeviceSessionManager.getDeviceSession(productId, deviceName);
-        if (null == deviceSession || !deviceSession.isLogin()) {
+        if (null == deviceSession) {
+            logger.logDevWarn(ConfigUtils.getName(), LOGOUT, device.getProductId(), deviceName, "offline request canceled due to device session is null");
+            DevicePromise<DeviceResult> promise = new DevicePromise<>();
+            promise.trySuccess(new DeviceResult(ReturnCode.SUCCESS));
+            return promise;
+        }
+        if (!deviceSession.isLogin()) {
             logger.logDevWarn(ConfigUtils.getName(), LOGOUT, device.getProductId(), deviceName, "offline request canceled due to device not login");
+            DeviceSessionManager.handleDeviceOffline(deviceSession);
             DevicePromise<DeviceResult> promise = new DevicePromise<>();
             promise.trySuccess(new DeviceResult(ReturnCode.SUCCESS));
             return promise;
@@ -84,7 +93,13 @@ public final class UpLinkChannelHandler {
         String deviceName = device.getDeviceName();
         String packetId = request.getId();
         DeviceSession deviceSession = DeviceSessionManager.getDeviceSession(productId, deviceName);
-        if (null == deviceSession || !deviceSession.isLogin()) {
+        if (null == deviceSession) {
+            logger.logDevWarn(ConfigUtils.getName(), GW_UP_LINK, device.getProductId(), deviceName, "device session is null");
+            DevicePromise<GetTopoResult> promise = new DevicePromise<>();
+            promise.trySuccess(new GetTopoResult(packetId, ReturnCode.DEVICE_NOT_ONLINE));
+            return promise;
+        }
+        if (!deviceSession.isLogin()) {
             logger.logDevWarn(ConfigUtils.getName(), GW_UP_LINK, device.getProductId(), deviceName, "device not login");
             DevicePromise<GetTopoResult> promise = new DevicePromise<>();
             promise.trySuccess(new GetTopoResult(packetId, ReturnCode.DEVICE_NOT_ONLINE));
@@ -142,13 +157,19 @@ public final class UpLinkChannelHandler {
             jsonObject.addProperty("id", id);
         }
         DeviceSession deviceSession = DeviceSessionManager.getDeviceSession(productId, deviceName);
-        if (null == deviceSession || !deviceSession.isLogin()) {
+        if (null == deviceSession) {
+            logger.logDevWarn(ConfigUtils.getName(), GW_UP_LINK, device.getProductId(), deviceName, "device session is null");
+            DevicePromise<DeviceResult> promise = new DevicePromise<>();
+            promise.trySuccess(new DeviceResult(id, ReturnCode.DEVICE_NOT_ONLINE));
+            return promise;
+        }
+        if (!deviceSession.isLogin()) {
             logger.logDevWarn(ConfigUtils.getName(), GW_UP_LINK, device.getProductId(), deviceName, "device not login");
             DevicePromise<DeviceResult> promise = new DevicePromise<>();
             promise.trySuccess(new DeviceResult(id, ReturnCode.DEVICE_NOT_ONLINE));
             return promise;
         }
-        MqttMessage mqttMessage = ProtocolMessageUtils.createMqttPublishMsg(topic, jsonObject.toString().getBytes());
+        MqttMessage mqttMessage = ProtocolMessageUtils.createMqttPublishMsg(topic, jsonObject.toString().getBytes(StandardCharsets.UTF_8));
         ProxySession proxySession = deviceSession.getProxySession();
         Channel channel = proxySession.getChannel();
         DevicePromise<DeviceResult> promise = new DevicePromise<>(id, mqttMessage, productId, deviceName, MessageType.COMMON_REQUEST, channel.eventLoop());
@@ -170,7 +191,13 @@ public final class UpLinkChannelHandler {
         String packetId = request.getId();
         DeviceSession deviceSession = DeviceSessionManager.getDeviceSession(productId, deviceName);
 
-        if (null == deviceSession || !deviceSession.isLogin()) {
+        if (null == deviceSession) {
+            logger.logDevWarn(ConfigUtils.getName(), GW_UP_LINK, device.getProductId(), deviceName, "device session is null");
+            DevicePromise<DeviceResult> promise = new DevicePromise<>();
+            promise.trySuccess(new DeviceResult(packetId, ReturnCode.DEVICE_NOT_ONLINE));
+            return promise;
+        }
+        if (!deviceSession.isLogin()) {
             logger.logDevWarn(ConfigUtils.getName(), GW_UP_LINK, device.getProductId(), deviceName, "device not login");
             DevicePromise<DeviceResult> promise = new DevicePromise<>();
             promise.trySuccess(new DeviceResult(packetId, ReturnCode.DEVICE_NOT_ONLINE));
@@ -248,6 +275,7 @@ public final class UpLinkChannelHandler {
             proxySession = ProxySessionManager.chooseProxySession();
             if (proxySession == null) {
                 logger.logDevWarn(ConfigUtils.getName(), LOGIN, productId, deviceName, "no available proxy session");
+                DeviceSessionManager.handleDeviceOffline(deviceSession);
                 DevicePromise<DeviceResult> promise = new DevicePromise<>();
                 promise.trySuccess(new DeviceResult(ReturnCode.SDK_INTERVAL_ERROR));
                 return promise;
@@ -255,8 +283,16 @@ public final class UpLinkChannelHandler {
             deviceSession.setProxySession(proxySession);
             proxySession.putDeviceSession(deviceSession);
         }
-        if (null == proxySession.getChannel() || !proxySession.getChannel().isActive()) {
-            logger.logDevWarn(ConfigUtils.getName(), LOGIN, productId, deviceName, "device session existing but proxy connection now is unavailable");
+        if (null == proxySession.getChannel()) {
+            logger.logDevWarn(ConfigUtils.getName(), LOGIN, productId, deviceName, "device session existing but proxy channel is null");
+            DeviceSessionManager.handleDeviceOffline(deviceSession);
+            DevicePromise<DeviceResult> promise = new DevicePromise<>();
+            promise.trySuccess(new DeviceResult(ReturnCode.SDK_INTERVAL_ERROR));
+            return promise;
+        }
+        if (!proxySession.getChannel().isActive()) {
+            logger.logDevWarn(ConfigUtils.getName(), LOGIN, productId, deviceName, "device session existing but proxy channel is inactive");
+            DeviceSessionManager.handleDeviceOffline(deviceSession);
             DevicePromise<DeviceResult> promise = new DevicePromise<>();
             promise.trySuccess(new DeviceResult(ReturnCode.SDK_INTERVAL_ERROR));
             return promise;
@@ -286,7 +322,11 @@ public final class UpLinkChannelHandler {
         String productId = device.getProductId();
         String deviceName = device.getDeviceName();
         DeviceSession deviceSession = DeviceSessionManager.getDeviceSession(productId, deviceName);
-        if (null == deviceSession || !deviceSession.isLogin()) {
+        if (null == deviceSession) {
+            logger.logDevWarn(ConfigUtils.getName(), GW_UP_LINK, device.getProductId(), deviceName, "device session is null");
+            return;
+        }
+        if (!deviceSession.isLogin()) {
             logger.logDevWarn(ConfigUtils.getName(), GW_UP_LINK, device.getProductId(), deviceName, "device not login");
             return;
         }

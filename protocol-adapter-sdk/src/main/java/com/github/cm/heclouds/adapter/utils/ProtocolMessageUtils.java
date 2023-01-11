@@ -8,7 +8,8 @@ import com.github.cm.heclouds.adapter.exceptions.UnsupportedMqttMessageTypeExcep
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.mqtt.*;
-import javafx.util.Pair;
+
+import java.util.AbstractMap;
 
 import static com.github.cm.heclouds.adapter.core.logging.LoggerFormat.Action.LOGIN;
 
@@ -307,8 +308,8 @@ public final class ProtocolMessageUtils {
      * @param tokens 分割后的topic tokens
      * @return 设备
      */
-    public static Pair<String, String> extractDeviceInfoFromTopic(String[] tokens) {
-        return new Pair<>(tokens[1], tokens[2]);
+    public static AbstractMap.SimpleEntry<String, String> extractDeviceInfoFromTopic(String[] tokens) {
+        return new AbstractMap.SimpleEntry<>(tokens[1], tokens[2]);
     }
 
     /**

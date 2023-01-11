@@ -61,7 +61,7 @@ public final class TcpProtocolHubHandler extends ChannelDuplexHandler {
             // 解码
             tcpDeviceUpLinkHandler.processUpLinkData(device, msg, channel);
         }
-        channel.read();
+
     }
 
     @Override

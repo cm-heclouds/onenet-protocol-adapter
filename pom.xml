@@ -6,17 +6,9 @@
     <groupId>com.github.cm-heclouds</groupId>
     <artifactId>protocol-adapter-parent</artifactId>
     <packaging>pom</packaging>
-    <version>1.0.4</version>
+    <version>1.0.5.4-SNAPSHOT</version>
     <name>protocol-adapter-parent</name>
     <description>OneNET Studio泛协议接入依赖</description>
-    <url>https://github.com/cm-heclouds/onenet-protocol-adapter</url>
-
-    <licenses>
-        <license>
-            <name>The Apache Software License, Version 2.0</name>
-            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-        </license>
-    </licenses>
 
     <modules>
         <module>protocol-adapter-core</module>
@@ -39,10 +31,10 @@
         <typesafe.config.version>1.3.5-RC1</typesafe.config.version>
         <auto.service.version>1.0-rc7</auto.service.version>
         <javapoet.version>1.11.1</javapoet.version>
-        <protocol.adapter.core.version>1.0.4</protocol.adapter.core.version>
-        <protocol.adapter.protocolhub.tcp.version>1.0.4</protocol.adapter.protocolhub.tcp.version>
-        <protocol.adapter.sdk.version>1.0.4</protocol.adapter.sdk.version>
-        <thing.model.code.generator.version>1.0.4</thing.model.code.generator.version>
+        <protocol.adapter.core.version>1.0.5.4-SNAPSHOT</protocol.adapter.core.version>
+        <protocol.adapter.protocolhub.tcp.version>1.0.5.4-SNAPSHOT</protocol.adapter.protocolhub.tcp.version>
+        <protocol.adapter.sdk.version>1.0.5.4-SNAPSHOT</protocol.adapter.sdk.version>
+        <thing.model.code.generator.version>1.0.5.4-SNAPSHOT</thing.model.code.generator.version>
     </properties>
 
     <dependencyManagement>
@@ -105,84 +97,56 @@
         </dependencies>
     </dependencyManagement>
 
-    <developers>
-        <developer>
-            <name>accessjavagroup</name>
-            <email>zuojian@cmiot.chinamobile.com</email>
-        </developer>
-    </developers>
+    <distributionManagement>
+        <repository>
+            <id>nexus-releases</id>
+            <name>Release Repository</name>
+            <url>http://10.12.4.13:8081/repository/maven-releases/</url>
+        </repository>
+        <snapshotRepository>
+            <id>nexus-snapshots</id>
+            <name>Nexus Snapshot Repository</name>
+            <url>http://10.12.4.13:8081/repository/maven-snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
 
-    <scm>
-        <connection>scm:git:git@github.com:cm-heclouds/onenet-protocol-adapter.git</connection>
-        <developerConnection>scm:git:git@github.com:cm-heclouds/onenet-protocol-adapter.git</developerConnection>
-        <url>https://github.com/cm-heclouds/onenet-protocol-adapter.git</url>
-    </scm>
-
-    <profiles>
-        <profile>
-            <id>release</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-source-plugin</artifactId>
-                        <version>2.2.1</version>
-                        <executions>
-                            <execution>
-                                <id>attach-sources</id>
-                                <goals>
-                                    <goal>jar-no-fork</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>2.9.1</version>
-                        <executions>
-                            <execution>
-                                <id>attach-javadocs</id>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                                <configuration>
-                                    <additionalparam>-Xdoclint:none</additionalparam>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <!-- GPG -->
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-gpg-plugin</artifactId>
-                        <version>1.6</version>
-                        <executions>
-                            <execution>
-                                <phase>verify</phase>
-                                <goals>
-                                    <goal>sign</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-
-            <distributionManagement>
-                <snapshotRepository>
-                    <id>oss</id>
-                    <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-                </snapshotRepository>
-                <repository>
-                    <id>oss</id>
-                    <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-                </repository>
-            </distributionManagement>
-        </profile>
-    </profiles>
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.2.0</version>
+                <configuration>
+                    <attach>true</attach>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.0</version>
+                <executions>
+                    <execution>
+                        <id>default-compile</id>
+                        <configuration>
+                            <compilerArgument>-proc:none</compilerArgument>
+                            <source>1.8</source>
+                            <target>1.8</target>
+                        </configuration>
+                    </execution>
+                </executions>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

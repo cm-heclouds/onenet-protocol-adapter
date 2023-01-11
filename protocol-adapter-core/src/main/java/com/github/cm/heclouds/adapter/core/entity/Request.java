@@ -4,7 +4,7 @@ package com.github.cm.heclouds.adapter.core.entity;
 import com.github.cm.heclouds.adapter.core.utils.GsonUtils;
 import com.github.cm.heclouds.adapter.core.utils.IdUtils;
 
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 /**
  * 请求基类
@@ -37,7 +37,7 @@ public class Request {
     }
 
     public byte[] encode() {
-        return toJsonString().getBytes(Charset.defaultCharset());
+        return toJsonString().getBytes(StandardCharsets.UTF_8);
     }
 
     public String toJsonString() {

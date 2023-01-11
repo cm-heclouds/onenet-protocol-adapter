@@ -2,9 +2,10 @@ package com.github.cm.heclouds.adapter.core.entity;
 
 import com.github.cm.heclouds.adapter.core.utils.GsonUtils;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 /**
  * 响应
@@ -40,7 +41,7 @@ public class Response {
             jsonData = msgElement.getAsJsonObject();
         }
 
-        return new Response(jsonObject.get("id") == null ? null : jsonObject.get("id").getAsString(),
+        return new Response((JsonNull.INSTANCE.equals(jsonObject.get("id")) || jsonObject.get("id") == null) ? null : jsonObject.get("id").getAsString(),
                 jsonObject.get("code") == null ? null : jsonObject.get("code").getAsInt(),
                 jsonObject.get("msg") == null ? null : jsonObject.get("msg").getAsString(),
                 jsonData);
@@ -79,7 +80,7 @@ public class Response {
     }
 
     public byte[] encode() {
-        return GsonUtils.GSON.toJson(this).getBytes(Charset.defaultCharset());
+        return GsonUtils.GSON.toJson(this).getBytes(StandardCharsets.UTF_8);
     }
 
     @Override

@@ -20,6 +20,8 @@ import static com.github.cm.heclouds.adapter.core.logging.LoggerFormat.Action.RU
  */
 public final class ControlSessionManager {
 
+    public static final long MAX_RECONNECT_INTERVAL = 3600L;
+
     public static Config config = null;
     public static ILogger logger = null;
 
@@ -103,8 +105,16 @@ public final class ControlSessionManager {
             }
             try {
                 long reconnectInterval = ctrlReconnectInterval.get();
+                if(reconnectInterval >= MAX_RECONNECT_INTERVAL){
+                    reconnectInterval = MAX_RECONNECT_INTERVAL;
+                }
                 logger.logInnerWarn(ConfigUtils.getName(), RUNTIME, "prepare to reconnect ctrl after " + reconnectInterval + "s");
                 TimeUnit.SECONDS.sleep(reconnectInterval);
+                try{
+                    controlSession.getChannel().close();
+                }catch (Exception e){
+                    logger.logInnerError(ConfigUtils.getName(), RUNTIME, "ctrl channel failed", e);
+                }
                 Channel channel = ProtocolAdapterService.initControlConnection(config, false);
                 isConnected = true;
                 controlSession.setChannel(channel);

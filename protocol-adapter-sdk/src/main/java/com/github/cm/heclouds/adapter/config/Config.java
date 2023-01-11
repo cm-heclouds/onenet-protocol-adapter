@@ -36,11 +36,11 @@ public class Config {
     /**
      * 默认平台接入机连接地址，非加密
      */
-    private static final String DEFAULT_CONNECTION_HOST_NO_TLS = "218.201.45.7:1883";
+    private static final String DEFAULT_CONNECTION_HOST_NO_TLS = "studio-mqtt.heclouds.com:1883";
     /**
      * 默认平台接入机连接地址，加密
      */
-    private static final String DEFAULT_CONNECTION_HOST_TLS = "183.230.102.116:8883";
+    private static final String DEFAULT_CONNECTION_HOST_TLS = "studio-mqtt.heclouds.com:8883";
     /**
      * 默认SDK和平台接入机之间不使用加密传输
      */

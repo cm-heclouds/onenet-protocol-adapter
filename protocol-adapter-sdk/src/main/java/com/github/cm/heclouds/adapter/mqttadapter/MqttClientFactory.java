@@ -27,6 +27,8 @@ import java.net.InetSocketAddress;
  */
 final class MqttClientFactory {
 
+    static EventLoopGroup eventLoopGroup;
+
     /**
      * 初始化Netty Client
      *
@@ -35,7 +37,6 @@ final class MqttClientFactory {
      */
     static Channel initializeNettyClient(Config config) {
         InetSocketAddress broker = InetSocketAddressUtils.getConnectionHost(config.getConnectionHost());
-        EventLoopGroup eventLoopGroup;
         Class<? extends AbstractChannel> channelClass;
         if (Epoll.isAvailable()) {
             eventLoopGroup = new EpollEventLoopGroup();

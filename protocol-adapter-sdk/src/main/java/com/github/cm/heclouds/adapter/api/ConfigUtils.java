@@ -2,9 +2,9 @@ package com.github.cm.heclouds.adapter.api;
 
 import com.github.cm.heclouds.adapter.config.Config;
 import com.github.cm.heclouds.adapter.config.IDeviceConfig;
-import com.github.cm.heclouds.adapter.exceptions.IllegalConfigException;
 import com.github.cm.heclouds.adapter.core.logging.ILogger;
 import com.github.cm.heclouds.adapter.core.utils.CoreConfigUtils;
+import com.github.cm.heclouds.adapter.exceptions.IllegalConfigException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +33,7 @@ public class ConfigUtils {
         }
         return config;
     }
+
     public static void setConfig(Config config) {
         ConfigUtils.config = config;
     }

@@ -436,7 +436,7 @@ public class FileLogger implements ILogger {
             configurator.doConfigure(inputStream);
             StatusPrinter.printInCaseOfErrorsOrWarnings(lc);
         } catch (Exception e) {
-            log.warn("Core {} {}", LoggerFormat.Action.INIT, "load log config file failed, use default config file. e:" + e);
+            log.warn("Core {} {}", LoggerFormat.Action.INIT, "load log config file failed, use default config file. e:", e);
             loadLogbackConfig(configFilePath);
         }
         configFilePath = logConfig;

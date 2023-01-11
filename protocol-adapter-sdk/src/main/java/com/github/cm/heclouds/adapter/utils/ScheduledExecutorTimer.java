@@ -139,7 +139,7 @@ public final class ScheduledExecutorTimer implements Timer {
                 timer.unregister(this);
                 task.run(this);
             } catch (Throwable cause) {
-                LOGGER.logInnerWarn(ConfigUtils.getName(), RUNTIME, "An exception was thrown by TimerTask, e:" + cause.getLocalizedMessage());
+                LOGGER.logInnerError(ConfigUtils.getName(), RUNTIME, "An exception was thrown by TimerTask", cause);
             }
             return null;
         }

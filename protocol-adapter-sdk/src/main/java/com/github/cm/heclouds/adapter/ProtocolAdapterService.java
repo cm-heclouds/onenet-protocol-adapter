@@ -52,7 +52,7 @@ public final class ProtocolAdapterService {
         if (StringUtil.isNullOrEmpty(config.getInstanceName())) {
             throw new IllegalConfigException("config \"instanceName\" must be present");
         }
-        if (ControlSessionManager.config != null) {
+        if (isInit && ControlSessionManager.config != null) {
             throw new IllegalStateException("duplicated initiation of control session");
         }
         ControlSessionManager.config = config;

@@ -33,16 +33,15 @@ import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.util.ReferenceCountUtil;
-import javafx.util.Pair;
 
 import java.nio.channels.ClosedChannelException;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.github.cm.heclouds.adapter.core.logging.LoggerFormat.Action.GW_DOWN_LINK;
-import static com.github.cm.heclouds.adapter.core.logging.LoggerFormat.Action.RUNTIME;
+import static com.github.cm.heclouds.adapter.core.logging.LoggerFormat.Action.*;
 import static io.netty.channel.ChannelFutureListener.CLOSE_ON_FAILURE;
 
 
@@ -99,13 +98,13 @@ public final class ProtocolMessageHandler extends ChannelDuplexHandler {
                 if (proxySession != null) {
                     try {
                         MqttPublishMessage publishMessage = ProtocolMessageUtils.validateMqttMessage(mqttMessage);
-                        Pair<String, String> pair = ProtocolMessageUtils.extractDeviceInfoFromTopic(TopicUtils.splitTopic(publishMessage.variableHeader().topicName()));
+                        AbstractMap.SimpleEntry<String, String> pair = ProtocolMessageUtils.extractDeviceInfoFromTopic(TopicUtils.splitTopic(publishMessage.variableHeader().topicName()));
                         DeviceSession deviceSession = proxySession.getDeviceSession(pair.getKey(), pair.getValue());
                         if (null != deviceSession) {
                             dispatchProxyConnMessage(deviceSession, publishMessage);
                         }
                     } catch (Exception e) {
-                        logger.logPxyConnWarn(ConfigUtils.getName(), GW_DOWN_LINK, "catch exception:" + e, proxySession.getProxyId());
+                        logger.logPxyConnError(ConfigUtils.getName(), GW_DOWN_LINK, "catch exception", proxySession.getProxyId(), e);
                     }
                 }
             } else {
@@ -170,27 +169,35 @@ public final class ProtocolMessageHandler extends ChannelDuplexHandler {
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
-        PromiseBreaker promiseBreaker = new PromiseBreaker(new ClosedChannelException());
-        for (Map.Entry<String, AtomicReference<DevicePromise<DeviceResult>>> entry : DEVICE_ONLINE_PROMISE_MAP.entrySet()) {
-            promiseBreaker.renege(entry.getValue().getAndSet(null));
-        }
-        for (Map.Entry<String, AtomicReference<DevicePromise<DeviceResult>>> entry : DEVICE_OFFLINE_PROMISE_MAP.entrySet()) {
-            promiseBreaker.renege(entry.getValue().getAndSet(null));
-        }
-        promiseBreaker.renege(DEVICE_UPLOAD_PROMISE_MAP.values());
-        ConnectionType connectionType = ConnectSessionNettyUtils.connectionType(ctx.channel());
-        switch (connectionType) {
-            case CONTROL_CONNECTION:
-                ControlSessionManager.handleConnectionLost();
-                break;
-            case PROXY_CONNECTION:
-                ProxySession proxySession = ConnectSessionNettyUtils.proxySession(ctx.channel());
-                if (proxySession != null) {
-                    ProxySessionManager.handleConnectionLost(proxySession);
-                }
-                break;
-            default:
-                break;
+        try {
+            PromiseBreaker promiseBreaker = new PromiseBreaker(new ClosedChannelException());
+            for (Map.Entry<String, AtomicReference<DevicePromise<DeviceResult>>> entry : DEVICE_ONLINE_PROMISE_MAP.entrySet()) {
+                promiseBreaker.renege(entry.getValue().getAndSet(null));
+            }
+            for (Map.Entry<String, AtomicReference<DevicePromise<DeviceResult>>> entry : DEVICE_OFFLINE_PROMISE_MAP.entrySet()) {
+                promiseBreaker.renege(entry.getValue().getAndSet(null));
+            }
+
+            promiseBreaker.renege(DEVICE_UPLOAD_PROMISE_MAP.values());
+        } catch (Exception e) {
+            logger.logInnerError(ConfigUtils.getName(), RUNTIME, "channelInactive e:", e);
+        } finally {
+            //确保设备下线
+            logger.logInnerInfo(ConfigUtils.getName(), DISCONNECT, "channelInactive, disconnect all connection");
+            ConnectionType connectionType = ConnectSessionNettyUtils.connectionType(ctx.channel());
+            switch (connectionType) {
+                case CONTROL_CONNECTION:
+                    ControlSessionManager.handleConnectionLost();
+                    break;
+                case PROXY_CONNECTION:
+                    ProxySession proxySession = ConnectSessionNettyUtils.proxySession(ctx.channel());
+                    if (proxySession != null) {
+                        ProxySessionManager.handleConnectionLost(proxySession);
+                    }
+                    break;
+                default:
+                    break;
+            }
         }
     }
 
@@ -263,9 +270,11 @@ public final class ProtocolMessageHandler extends ChannelDuplexHandler {
             case LOGOUT_RESPONSE: {
                 reference = DEVICE_OFFLINE_PROMISE_MAP.remove(productId + "-" + deviceName);
                 if (reference == null) {
-                    logger.logDevWarn(ConfigUtils.getName(), GW_DOWN_LINK, productId, deviceName, "device online failed: online result is null");
+                    logger.logDevWarn(ConfigUtils.getName(), GW_DOWN_LINK, productId, deviceName, "device offline failed: offline result is null");
+                    DeviceSessionManager.handleDeviceOffline(deviceSession);
                     return;
                 }
+                logger.logDevInfo(ConfigUtils.getName(), GW_DOWN_LINK, productId, deviceName, "offline with logout response");
                 promise = reference.getAndSet(null);
                 response = Response.decode(data);
                 DeviceUtils.setDeviceCloseReason(device, CloseReason.CLOSE_BY_DEVICE_OFFLINE);
@@ -276,11 +285,16 @@ public final class ProtocolMessageHandler extends ChannelDuplexHandler {
             case LOGOUT_NOTIFY: {
                 if (!login) {
                     logger.logDevWarn(ConfigUtils.getName(), GW_DOWN_LINK, productId, deviceName, "device is received logout_notify message while offline");
+                    DeviceSessionManager.handleDeviceOffline(deviceSession);
                     return;
                 }
+                logger.logDevInfo(ConfigUtils.getName(), GW_DOWN_LINK, productId, deviceName, "offline with logout notify");
                 response = Response.decode(data);
                 DeviceUtils.setDeviceCloseReason(device, CloseReason.CLOSE_BY_ONENET);
-                DeviceSessionManager.handleDeviceOffline(deviceSession);
+                //判断消息类型，若非重复登录则移除设备session
+                if (response.getCode() != ReturnCode.DUP_LOGIN.getCode()) {
+                    DeviceSessionManager.handleDeviceOffline(deviceSession);
+                }
                 downLinkRequestHandler.onDeviceNotifiedLogout(device, response);
                 break;
             }

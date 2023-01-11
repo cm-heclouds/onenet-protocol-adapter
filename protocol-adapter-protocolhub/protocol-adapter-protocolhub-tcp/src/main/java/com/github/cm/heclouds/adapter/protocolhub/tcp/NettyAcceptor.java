@@ -125,8 +125,7 @@ final class NettyAcceptor {
                 .option(ChannelOption.SO_BACKLOG, 1000000)
                 .option(ChannelOption.SO_REUSEADDR, true)
                 .childOption(ChannelOption.TCP_NODELAY, true)
-                .childOption(ChannelOption.SO_KEEPALIVE, false)
-                .childOption(ChannelOption.AUTO_READ, false);
+                .childOption(ChannelOption.SO_KEEPALIVE, false);
         return b;
     }
 

@@ -2,8 +2,8 @@ package com.github.cm.heclouds.adapter.entity.sdk;
 
 import com.github.cm.heclouds.adapter.mqttadapter.MqttClient;
 import io.netty.channel.Channel;
-import javafx.util.Pair;
 
+import java.util.AbstractMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -18,7 +18,7 @@ public final class ProxySession {
      * 此代理连接代理的DeviceInfo和DeviceSession的映射关系
      * 其中Pair<Long, String>中Long为产品ID，String为设备名称
      */
-    private ConcurrentMap<Pair<String, String>, DeviceSession> proxyDevAssociation = new ConcurrentHashMap<>();
+    private ConcurrentMap<AbstractMap.SimpleEntry<String, String>, DeviceSession> proxyDevAssociation = new ConcurrentHashMap<>();
 
     /**
      * MQTT Client
@@ -58,11 +58,11 @@ public final class ProxySession {
         return new Builder();
     }
 
-    public ConcurrentMap<Pair<String, String>, DeviceSession> getProxyDevAssociation() {
+    public ConcurrentMap<AbstractMap.SimpleEntry<String, String>, DeviceSession> getProxyDevAssociation() {
         return proxyDevAssociation;
     }
 
-    public void setProxyDevAssociation(ConcurrentMap<Pair<String, String>, DeviceSession> proxyDevAssociation) {
+    public void setProxyDevAssociation(ConcurrentMap<AbstractMap.SimpleEntry<String, String>, DeviceSession> proxyDevAssociation) {
         this.proxyDevAssociation = proxyDevAssociation;
     }
 
@@ -112,7 +112,7 @@ public final class ProxySession {
      * @param deviceSession 设备Session
      */
     public void putDeviceSession(DeviceSession deviceSession) {
-        proxyDevAssociation.put(new Pair<>(deviceSession.getProductId(), deviceSession.getDeviceName()), deviceSession);
+        proxyDevAssociation.put(new AbstractMap.SimpleEntry<>(deviceSession.getProductId(), deviceSession.getDeviceName()), deviceSession);
     }
 
     /**
@@ -123,7 +123,7 @@ public final class ProxySession {
      * @return 设备Session
      */
     public DeviceSession getDeviceSession(String productId, String deviceName) {
-        return proxyDevAssociation.get(new Pair<>(productId, deviceName));
+        return proxyDevAssociation.get(new AbstractMap.SimpleEntry<>(productId, deviceName));
     }
 
     /**
@@ -133,7 +133,7 @@ public final class ProxySession {
      * @param deviceName 设备名称
      */
     public void removeDeviceSession(String productId, String deviceName) {
-        proxyDevAssociation.remove(new Pair<>(productId, deviceName));
+        proxyDevAssociation.remove(new AbstractMap.SimpleEntry<>(productId, deviceName));
     }
 
     /**
@@ -146,7 +146,7 @@ public final class ProxySession {
     }
 
     public static final class Builder {
-        private ConcurrentMap<Pair<String, String>, DeviceSession> proxyDevAssociation;
+        private ConcurrentMap<AbstractMap.SimpleEntry<String, String>, DeviceSession> proxyDevAssociation;
         private MqttClient mqttClient;
         private String proxyId;
         private Channel channel;
@@ -156,7 +156,7 @@ public final class ProxySession {
         private Builder() {
         }
 
-        public Builder proxyDevAssociation(ConcurrentMap<Pair<String, String>, DeviceSession> val) {
+        public Builder proxyDevAssociation(ConcurrentMap<AbstractMap.SimpleEntry<String, String>, DeviceSession> val) {
             proxyDevAssociation = val;
             return this;
         }

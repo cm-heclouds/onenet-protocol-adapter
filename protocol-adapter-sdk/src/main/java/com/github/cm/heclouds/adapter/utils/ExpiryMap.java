@@ -8,11 +8,17 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class ExpiryMap<K, V> implements Map<K, V> {
 
-    private static final ConcurrentHashMap WORK_MAP = new ConcurrentHashMap<>();
-    private static final ConcurrentHashMap<Object, Long> EXPIRY_MAP = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<K, V> workMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<K, Long> innerExpiryMap = new ConcurrentHashMap<>();
 
-    // 定时清除失效key
-    static {
+
+    /**
+     * 过期时间，单位ms
+     */
+    private long expiryTime = 60 * 1000;
+
+    public ExpiryMap() {
+        // 定时清除失效key
         //间隔时间，单位：秒
         int interval = 5 * 60;
         new Timer().schedule(new TimerTask() {
@@ -24,24 +30,16 @@ public class ExpiryMap<K, V> implements Map<K, V> {
         }, interval * 1000, interval * 1000);
     }
 
-    /**
-     * 过期时间，单位ms
-     */
-    private long expiryTime = 60 * 1000;
-
-    public ExpiryMap() {
-    }
-
     public ExpiryMap(long expiryTime) {
-        super();
+        this();
         this.expiryTime = expiryTime;
     }
 
-    private static void removeInValidKeys() {
-        EXPIRY_MAP.keySet().forEach(key -> {
-            if (EXPIRY_MAP.get(key) < System.currentTimeMillis()) {
-                EXPIRY_MAP.remove(key);
-                WORK_MAP.remove(key);
+    private void removeInValidKeys() {
+        innerExpiryMap.keySet().forEach(key -> {
+            if (innerExpiryMap.get(key) < System.currentTimeMillis()) {
+                innerExpiryMap.remove(key);
+                workMap.remove(key);
             }
         });
     }
@@ -56,8 +54,8 @@ public class ExpiryMap<K, V> implements Map<K, V> {
      */
     @Override
     public V put(K key, V value) {
-        EXPIRY_MAP.put(key, System.currentTimeMillis() + expiryTime);
-        return (V) WORK_MAP.put(key, value);
+        innerExpiryMap.put(key, System.currentTimeMillis() + expiryTime);
+        return workMap.put(key, value);
     }
 
     /**
@@ -69,14 +67,14 @@ public class ExpiryMap<K, V> implements Map<K, V> {
      * @return
      */
     public V put(K key, V value, long expiry) {
-        EXPIRY_MAP.put(key, System.currentTimeMillis() + expiry);
-        return (V) WORK_MAP.put(key, value);
+        innerExpiryMap.put(key, System.currentTimeMillis() + expiry);
+        return workMap.put(key, value);
     }
 
     @Override
     public V putIfAbsent(K key, V value) {
         if (!containsKey(key)) {
-            EXPIRY_MAP.put(key, System.currentTimeMillis() + expiryTime);
+            innerExpiryMap.put(key, System.currentTimeMillis() + expiryTime);
             return put(key, value);
         } else {
             return get(key);
@@ -85,7 +83,7 @@ public class ExpiryMap<K, V> implements Map<K, V> {
 
     public V putIfAbsent(K key, V value, long expiry) {
         if (!containsKey(key)) {
-            EXPIRY_MAP.put(key, System.currentTimeMillis() + expiry);
+            innerExpiryMap.put(key, System.currentTimeMillis() + expiry);
             return put(key, value);
         } else {
             return get(key);
@@ -105,11 +103,11 @@ public class ExpiryMap<K, V> implements Map<K, V> {
     @Override
     public boolean containsKey(Object key) {
         if (key != null) {
-            if (EXPIRY_MAP.containsKey(key)) {
-                if (EXPIRY_MAP.get(key) > System.currentTimeMillis()) {
+            if (innerExpiryMap.containsKey(key)) {
+                if (innerExpiryMap.get(key) > System.currentTimeMillis()) {
                     return true;
                 } else {
-                    EXPIRY_MAP.remove(key);
+                    innerExpiryMap.remove(key);
                     return false;
                 }
             }
@@ -119,14 +117,14 @@ public class ExpiryMap<K, V> implements Map<K, V> {
 
     @Override
     public boolean containsValue(Object value) {
-        Collection<Object> values = WORK_MAP.values();
+        Collection<V> values = workMap.values();
         return values.contains(value);
     }
 
     @Override
     public V get(Object key) {
         if (containsKey(key)) {
-            return (V) WORK_MAP.get(key);
+            return workMap.get(key);
         }
         return null;
     }
@@ -134,9 +132,9 @@ public class ExpiryMap<K, V> implements Map<K, V> {
     @Override
     public V remove(Object key) {
         boolean containKey = containsKey(key);
-        EXPIRY_MAP.remove(key);
+        innerExpiryMap.remove(key);
         if (containKey) {
-            return (V) WORK_MAP.remove(key);
+            return workMap.remove(key);
         } else {
             return null;
         }
@@ -151,25 +149,25 @@ public class ExpiryMap<K, V> implements Map<K, V> {
 
     @Override
     public void clear() {
-        EXPIRY_MAP.clear();
-        WORK_MAP.clear();
+        innerExpiryMap.clear();
+        workMap.clear();
     }
 
     @Override
     public Set<K> keySet() {
         removeInValidKeys();
-        return WORK_MAP.keySet();
+        return workMap.keySet();
     }
 
     @Override
     public Collection<V> values() {
         removeInValidKeys();
-        return WORK_MAP.values();
+        return workMap.values();
     }
 
     @Override
     public Set<Entry<K, V>> entrySet() {
         removeInValidKeys();
-        return WORK_MAP.entrySet();
+        return workMap.entrySet();
     }
 }

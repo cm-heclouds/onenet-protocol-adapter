@@ -1,14 +1,14 @@
 package com.github.cm.heclouds.adapter.mqttadapter;
 
 import com.github.cm.heclouds.adapter.api.ConfigUtils;
-import com.github.cm.heclouds.adapter.core.entity.ReturnCode;
 import com.github.cm.heclouds.adapter.config.IDeviceConfig;
 import com.github.cm.heclouds.adapter.config.impl.ConfigConsts;
 import com.github.cm.heclouds.adapter.core.consts.CloseReason;
 import com.github.cm.heclouds.adapter.core.entity.Device;
+import com.github.cm.heclouds.adapter.core.entity.Response;
+import com.github.cm.heclouds.adapter.core.entity.ReturnCode;
 import com.github.cm.heclouds.adapter.core.logging.ILogger;
 import com.github.cm.heclouds.adapter.core.utils.DeviceUtils;
-import com.github.cm.heclouds.adapter.core.entity.Response;
 import com.github.cm.heclouds.adapter.entity.sdk.ConnectionType;
 import com.github.cm.heclouds.adapter.entity.sdk.DeviceSession;
 import com.github.cm.heclouds.adapter.entity.sdk.ProxySession;
@@ -17,7 +17,6 @@ import com.github.cm.heclouds.adapter.mqttadapter.mqtt.promise.MqttConnectResult
 import com.github.cm.heclouds.adapter.utils.ConnectSessionNettyUtils;
 import com.github.cm.heclouds.adapter.utils.SasTokenGenerator;
 import io.netty.channel.Channel;
-import javafx.util.Pair;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -108,12 +107,11 @@ public final class ProxySessionManager {
      * 连接断开情况处理
      */
     public static void handleConnectionLost(ProxySession proxySession) {
-        LOGGER.logPxyConnWarn(ConfigUtils.getName(), DISCONNECT, null, proxySession.getProxyId());
-        Iterator<Map.Entry<Pair<String, String>, DeviceSession>> iterator = proxySession.getProxyDevAssociation().entrySet().iterator();
+        Iterator<Map.Entry<AbstractMap.SimpleEntry<String, String>, DeviceSession>> iterator = proxySession.getProxyDevAssociation().entrySet().iterator();
         removeProxySession(proxySession.getProxyId());
         // 所有代理设备下线
         while (iterator.hasNext()) {
-            Map.Entry<Pair<String, String>, DeviceSession> entry = iterator.next();
+            Map.Entry<AbstractMap.SimpleEntry<String, String>, DeviceSession> entry = iterator.next();
             DeviceSession deviceSession = entry.getValue();
             Device device = Device.newBuilder()
                     .productId(deviceSession.getProductId())
@@ -208,7 +206,7 @@ public final class ProxySessionManager {
             }
             result = mqttClient.connect(clientId, serviceId, sasToken);
         } catch (ExecutionException | InterruptedException e) {
-            LOGGER.logPxyConnWarn(ConfigUtils.getName(), INIT, "initialize mqtt client failed whiling choose proxy session due to " + e.getLocalizedMessage(), clientId);
+            LOGGER.logPxyConnError(ConfigUtils.getName(), INIT, "initialize mqtt client failed whiling choose proxy session", clientId, e);
             Thread.currentThread().interrupt();
             return null;
         }
