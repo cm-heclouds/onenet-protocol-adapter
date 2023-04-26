@@ -2,6 +2,7 @@ package com.github.cm.heclouds.adapter.utils;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * 带过期时间的Map
@@ -11,6 +12,7 @@ public class ExpiryMap<K, V> implements Map<K, V> {
     private final ConcurrentHashMap<K, V> workMap = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<K, Long> innerExpiryMap = new ConcurrentHashMap<>();
 
+    private ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
     /**
      * 过期时间，单位ms
@@ -36,12 +38,17 @@ public class ExpiryMap<K, V> implements Map<K, V> {
     }
 
     private void removeInValidKeys() {
-        innerExpiryMap.keySet().forEach(key -> {
-            if (innerExpiryMap.get(key) < System.currentTimeMillis()) {
-                innerExpiryMap.remove(key);
-                workMap.remove(key);
-            }
-        });
+        lock.writeLock().lock();
+        try {
+            innerExpiryMap.keySet().forEach(key -> {
+                if (innerExpiryMap.get(key) < System.currentTimeMillis()) {
+                    innerExpiryMap.remove(key);
+                    workMap.remove(key);
+                }
+            });
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 
 
@@ -54,8 +61,13 @@ public class ExpiryMap<K, V> implements Map<K, V> {
      */
     @Override
     public V put(K key, V value) {
-        innerExpiryMap.put(key, System.currentTimeMillis() + expiryTime);
-        return workMap.put(key, value);
+        lock.writeLock().lock();
+        try {
+            innerExpiryMap.put(key, System.currentTimeMillis() + expiryTime);
+            return workMap.put(key, value);
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 
     /**
@@ -67,26 +79,41 @@ public class ExpiryMap<K, V> implements Map<K, V> {
      * @return
      */
     public V put(K key, V value, long expiry) {
-        innerExpiryMap.put(key, System.currentTimeMillis() + expiry);
-        return workMap.put(key, value);
+        lock.writeLock().lock();
+        try {
+            innerExpiryMap.put(key, System.currentTimeMillis() + expiry);
+            return workMap.put(key, value);
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 
     @Override
     public V putIfAbsent(K key, V value) {
-        if (!containsKey(key)) {
-            innerExpiryMap.put(key, System.currentTimeMillis() + expiryTime);
-            return put(key, value);
-        } else {
-            return get(key);
+        lock.writeLock().lock();
+        try {
+            if (!containsKey(key)) {
+                innerExpiryMap.put(key, System.currentTimeMillis() + expiryTime);
+                return put(key, value);
+            } else {
+                return get(key);
+            }
+        } finally {
+            lock.writeLock().unlock();
         }
     }
 
     public V putIfAbsent(K key, V value, long expiry) {
-        if (!containsKey(key)) {
-            innerExpiryMap.put(key, System.currentTimeMillis() + expiry);
-            return put(key, value);
-        } else {
-            return get(key);
+        lock.writeLock().lock();
+        try {
+            if (!containsKey(key)) {
+                innerExpiryMap.put(key, System.currentTimeMillis() + expiry);
+                return put(key, value);
+            } else {
+                return get(key);
+            }
+        }finally {
+            lock.writeLock().unlock();
         }
     }
 
@@ -102,41 +129,63 @@ public class ExpiryMap<K, V> implements Map<K, V> {
 
     @Override
     public boolean containsKey(Object key) {
-        if (key != null) {
-            if (innerExpiryMap.containsKey(key)) {
-                if (innerExpiryMap.get(key) > System.currentTimeMillis()) {
-                    return true;
-                } else {
-                    innerExpiryMap.remove(key);
-                    return false;
+        lock.writeLock().lock();
+        try {
+            if (key != null) {
+                if (innerExpiryMap.containsKey(key)) {
+                    if (innerExpiryMap.get(key) > System.currentTimeMillis()) {
+                        return true;
+                    } else {
+                        innerExpiryMap.remove(key);
+                        return false;
+                    }
                 }
             }
+            return false;
+        }finally {
+            lock.writeLock().unlock();
         }
-        return false;
     }
 
     @Override
     public boolean containsValue(Object value) {
-        Collection<V> values = workMap.values();
-        return values.contains(value);
+
+        lock.readLock().lock();
+        try {
+            Collection<V> values = workMap.values();
+            return values.contains(value);
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     @Override
     public V get(Object key) {
-        if (containsKey(key)) {
-            return workMap.get(key);
+        lock.readLock().lock();
+        try {
+            if (containsKey(key)) {
+                return workMap.get(key);
+            }
+            return null;
+        } finally {
+            lock.readLock().unlock();
         }
-        return null;
     }
 
     @Override
     public V remove(Object key) {
-        boolean containKey = containsKey(key);
-        innerExpiryMap.remove(key);
-        if (containKey) {
-            return workMap.remove(key);
-        } else {
-            return null;
+
+        lock.writeLock().lock();
+        try {
+            boolean containKey = containsKey(key);
+            innerExpiryMap.remove(key);
+            if (containKey) {
+                return workMap.remove(key);
+            } else {
+                return null;
+            }
+        }finally {
+            lock.writeLock().unlock();
         }
 
     }
@@ -149,25 +198,45 @@ public class ExpiryMap<K, V> implements Map<K, V> {
 
     @Override
     public void clear() {
-        innerExpiryMap.clear();
-        workMap.clear();
+        lock.writeLock().lock();
+        try {
+            innerExpiryMap.clear();
+            workMap.clear();
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 
     @Override
     public Set<K> keySet() {
-        removeInValidKeys();
-        return workMap.keySet();
+        lock.readLock().lock();
+        try {
+            removeInValidKeys();
+            return workMap.keySet();
+        }finally {
+            lock.readLock().unlock();
+        }
     }
 
     @Override
     public Collection<V> values() {
-        removeInValidKeys();
-        return workMap.values();
+        lock.readLock().lock();
+        try {
+            removeInValidKeys();
+            return workMap.values();
+        }finally {
+            lock.readLock().unlock();
+        }
     }
 
     @Override
     public Set<Entry<K, V>> entrySet() {
-        removeInValidKeys();
-        return workMap.entrySet();
+        lock.readLock().lock();
+        try {
+            removeInValidKeys();
+            return workMap.entrySet();
+        }finally {
+            lock.readLock().unlock();
+        }
     }
 }

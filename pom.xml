@@ -6,7 +6,7 @@
     <groupId>com.github.cm-heclouds</groupId>
     <artifactId>protocol-adapter-parent</artifactId>
     <packaging>pom</packaging>
-    <version>1.0.5.4-SNAPSHOT</version>
+    <version>1.0.5.5-SNAPSHOT</version>
     <name>protocol-adapter-parent</name>
     <description>OneNET Studio泛协议接入依赖</description>
     <url>https://github.com/cm-heclouds/onenet-protocol-adapter</url>
@@ -41,7 +41,7 @@
         <javapoet.version>1.11.1</javapoet.version>
         <protocol.adapter.core.version>1.0.5.4-SNAPSHOT</protocol.adapter.core.version>
         <protocol.adapter.protocolhub.tcp.version>1.0.5.4-SNAPSHOT</protocol.adapter.protocolhub.tcp.version>
-        <protocol.adapter.sdk.version>1.0.5.4-SNAPSHOT</protocol.adapter.sdk.version>
+        <protocol.adapter.sdk.version>1.0.5.5-SNAPSHOT</protocol.adapter.sdk.version>
         <thing.model.code.generator.version>1.0.5.4-SNAPSHOT</thing.model.code.generator.version>
     </properties>
 
