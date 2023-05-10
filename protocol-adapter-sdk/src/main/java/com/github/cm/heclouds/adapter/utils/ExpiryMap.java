@@ -9,6 +9,9 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public class ExpiryMap<K, V> implements Map<K, V> {
 
+    /*
+    对外调用的方法：remove 、values、entryset、put、putifabsent
+     */
     private final ConcurrentHashMap<K, V> workMap = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<K, Long> innerExpiryMap = new ConcurrentHashMap<>();
 
@@ -94,9 +97,12 @@ public class ExpiryMap<K, V> implements Map<K, V> {
         try {
             if (!containsKey(key)) {
                 innerExpiryMap.put(key, System.currentTimeMillis() + expiryTime);
-                return put(key, value);
+                return workMap.put(key, value);
             } else {
-                return get(key);
+                if (containsKey(key)) {
+                    return workMap.get(key);
+                }
+                return null;
             }
         } finally {
             lock.writeLock().unlock();
@@ -107,10 +113,14 @@ public class ExpiryMap<K, V> implements Map<K, V> {
         lock.writeLock().lock();
         try {
             if (!containsKey(key)) {
-                innerExpiryMap.put(key, System.currentTimeMillis() + expiry);
-                return put(key, value);
+//                innerExpiryMap.put(key, System.currentTimeMillis() + expiry);
+                innerExpiryMap.put(key, System.currentTimeMillis() + expiryTime);
+                return workMap.put(key, value);
             } else {
-                return get(key);
+                if (containsKey(key)) {
+                    return workMap.get(key);
+                }
+                return null;
             }
         }finally {
             lock.writeLock().unlock();
@@ -128,23 +138,19 @@ public class ExpiryMap<K, V> implements Map<K, V> {
     }
 
     @Override
+    @Deprecated
     public boolean containsKey(Object key) {
-        lock.writeLock().lock();
-        try {
-            if (key != null) {
-                if (innerExpiryMap.containsKey(key)) {
-                    if (innerExpiryMap.get(key) > System.currentTimeMillis()) {
-                        return true;
-                    } else {
-                        innerExpiryMap.remove(key);
-                        return false;
-                    }
+        if (key != null) {
+            if (innerExpiryMap.containsKey(key)) {
+                if (innerExpiryMap.get(key) > System.currentTimeMillis()) {
+                    return true;
+                } else {
+                    innerExpiryMap.remove(key);
+                    return false;
                 }
             }
-            return false;
-        }finally {
-            lock.writeLock().unlock();
         }
+        return false;
     }
 
     @Override
@@ -161,14 +167,14 @@ public class ExpiryMap<K, V> implements Map<K, V> {
 
     @Override
     public V get(Object key) {
-        lock.readLock().lock();
+        lock.writeLock().lock();
         try {
             if (containsKey(key)) {
                 return workMap.get(key);
             }
             return null;
         } finally {
-            lock.readLock().unlock();
+            lock.writeLock().unlock();
         }
     }
 
@@ -209,9 +215,9 @@ public class ExpiryMap<K, V> implements Map<K, V> {
 
     @Override
     public Set<K> keySet() {
-        lock.readLock().lock();
         try {
             removeInValidKeys();
+            lock.readLock().lock();
             return workMap.keySet();
         }finally {
             lock.readLock().unlock();
@@ -220,9 +226,9 @@ public class ExpiryMap<K, V> implements Map<K, V> {
 
     @Override
     public Collection<V> values() {
-        lock.readLock().lock();
         try {
             removeInValidKeys();
+            lock.readLock().lock();
             return workMap.values();
         }finally {
             lock.readLock().unlock();
@@ -231,9 +237,9 @@ public class ExpiryMap<K, V> implements Map<K, V> {
 
     @Override
     public Set<Entry<K, V>> entrySet() {
-        lock.readLock().lock();
         try {
             removeInValidKeys();
+            lock.readLock().lock();
             return workMap.entrySet();
         }finally {
             lock.readLock().unlock();
