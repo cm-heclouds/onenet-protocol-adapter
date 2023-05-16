@@ -184,7 +184,9 @@ public class ExpiryMap<K, V> implements Map<K, V> {
         lock.writeLock().lock();
         try {
             boolean containKey = containsKey(key);
-            innerExpiryMap.remove(key);
+            if (key != null && innerExpiryMap.containsKey(key)){
+                innerExpiryMap.remove(key);
+            }
             if (containKey) {
                 return workMap.remove(key);
             } else {
