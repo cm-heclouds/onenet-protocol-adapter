@@ -107,6 +107,7 @@ public final class ControlSessionManager {
                 long reconnectInterval = ctrlReconnectInterval.get();
                 if(reconnectInterval >= MAX_RECONNECT_INTERVAL){
                     reconnectInterval = MAX_RECONNECT_INTERVAL;
+                    ctrlReconnectInterval.set(MAX_RECONNECT_INTERVAL);
                 }
                 logger.logInnerWarn(ConfigUtils.getName(), RUNTIME, "prepare to reconnect ctrl after " + reconnectInterval + "s");
                 TimeUnit.SECONDS.sleep(reconnectInterval);

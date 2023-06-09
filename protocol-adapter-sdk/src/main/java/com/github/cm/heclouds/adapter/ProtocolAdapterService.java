@@ -58,20 +58,26 @@ public final class ProtocolAdapterService {
         ControlSessionManager.config = config;
         ControlSessionManager.logger = ConfigUtils.getLogger();
         MqttClient mqttClient = new MqttClient(config);
-        ConnectSessionNettyUtils.setConnectionType(mqttClient.getChannel(), ConnectionType.CONTROL_CONNECTION);
-        String sasToken = SasTokenGenerator.adapterSasToken(config);
-        String serviceId = config.getServiceId();
-        String instanceName = config.getInstanceName();
-        MqttConnectResult result = mqttClient.connect(instanceName, serviceId, sasToken);
-        if (result.returnCode() != MqttConnectReturnCode.CONNECTION_ACCEPTED) {
-            if (isInit) {
-                logger.logCtrlConnError(ConfigUtils.getName(), INIT, serviceId, instanceName, "failed, error: " + result.returnCode().toString(), null);
-                System.exit(0);
-            } else {
-                throw new Exception("ctrl connect failed, error: " + result.returnCode().toString());
+        try{
+            ConnectSessionNettyUtils.setConnectionType(mqttClient.getChannel(), ConnectionType.CONTROL_CONNECTION);
+            String sasToken = SasTokenGenerator.adapterSasToken(config);
+            String serviceId = config.getServiceId();
+            String instanceName = config.getInstanceName();
+            MqttConnectResult result = mqttClient.connect(instanceName, serviceId, sasToken);
+            if (result.returnCode() != MqttConnectReturnCode.CONNECTION_ACCEPTED) {
+                if (isInit) {
+                    logger.logCtrlConnError(ConfigUtils.getName(), INIT, serviceId, instanceName, "failed, error: " + result.returnCode().toString(), null);
+                    System.exit(0);
+                } else {
+                    mqttClient.getChannel().close();
+                    throw new Exception("ctrl connect failed, error: " + result.returnCode().toString());
+                }
             }
+            return mqttClient.getChannel();
+        }catch (Exception e){
+            mqttClient.getChannel().close();
+            throw e;
         }
-        return mqttClient.getChannel();
     }
 
     /**
